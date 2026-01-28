@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.VisionSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -31,6 +32,8 @@ public class RobotContainer {
 
     public final OI oi = new OI();
 
+    public final VisionSubsystem vision = new VisionSubsystem();
+
     public RobotContainer() {
         configureBindings();
     }
@@ -46,6 +49,16 @@ public class RobotContainer {
                     .withRotationalRate(oi.processed_drive_rot.getAsDouble() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
+
+        vision.setDefaultCommand(vision.runOnce(() -> {
+            var estimation = vision.getEstimation();
+
+            if (estimation != null) {
+                // System.out.println("Swerve has vision estimation");
+                drivetrain.addVisionMeasurement(estimation.estimatedPose.toPose2d(), estimation.timestampSeconds);
+            }
+
+        }).ignoringDisable(true));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
