@@ -8,8 +8,16 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.therekrab.autopilot.APConstraints;
+import com.therekrab.autopilot.APProfile;
+import com.therekrab.autopilot.APTarget;
+import com.therekrab.autopilot.Autopilot;
+import com.therekrab.autopilot.Autopilot.APResult;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -17,15 +25,29 @@ import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
-                                                                                        // speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
-                                                                                      // max angular velocity
+    // kSpeedAt12Volts desired top speed
+    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.05).withRotationalDeadband(MaxAngularRate * 0.05) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+
+    private static final APConstraints kAPConstraints = new APConstraints()
+            .withAcceleration(0.1)
+            .withJerk(0.1);
+
+    private static final APProfile kAPProfile = new APProfile(kAPConstraints)
+            .withErrorXY(Centimeters.of(2))
+            .withErrorTheta(Degrees.of(0.5))
+            .withBeelineRadius(Centimeters.of(8));
+
+    public static final Autopilot kAutopilot = new Autopilot(kAPProfile);
+
+    private APTarget target = new APTarget(new Pose2d(16.54 - 2.0, 8.07 / 2.0, Rotation2d.kZero))
+            .withEntryAngle(Rotation2d.kZero);
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -45,19 +67,14 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
                 // Drivetrain will execute this command periodically
-                drivetrain.applyRequest(() -> drive.withVelocityX(oi.processed_drive_x.getAsDouble() * MaxSpeed) // Drive
-                                                                                                                 // forward
-                                                                                                                 // with
-                                                                                                                 // negative
-                                                                                                                 // Y
-                                                                                                                 // (forward)
-                        .withVelocityY(oi.processed_drive_y.getAsDouble() * MaxSpeed) // Drive left with negative X
-                                                                                      // (left)
-                        .withRotationalRate(oi.processed_drive_rot.getAsDouble() * MaxAngularRate) // Drive
-                                                                                                   // counterclockwise
-                                                                                                   // with negative X
-                                                                                                   // (left)
-                ));
+                drivetrain.applyRequest(() ->
+                // Drive forward with negative y (forward)
+                drive.withVelocityX(oi.processed_drive_x.getAsDouble() * MaxSpeed)
+
+                        // Drive left with negative X (left)
+                        .withVelocityY(oi.processed_drive_y.getAsDouble() * MaxSpeed)
+                        // Drive counterclockwise with negative X(left)
+                        .withRotationalRate(oi.processed_drive_rot.getAsDouble() * MaxAngularRate)));
 
         frontCamera.setDefaultCommand(frontCamera.runOnce(() -> {
             drivetrain.addVisionMeasurement(frontCamera.getEstimatedPose(), frontCamera.getEstimatedTimestamp());
@@ -73,6 +90,27 @@ public class RobotContainer {
         oi.gyroReset.onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+
+        Command alignCommand = drivetrain.run(() -> {
+
+            ChassisSpeeds robotRelativeSpeeds = drivetrain.getState().Speeds;
+            Pose2d pose = drivetrain.getState().Pose;
+
+            APResult output = kAutopilot.calculate(pose, robotRelativeSpeeds, target);
+
+            /* these speeds are field relative */
+            LinearVelocity veloX = output.vx();
+            LinearVelocity veloY = output.vy();
+            Rotation2d headingReference = output.targetAngle();
+
+            /* This is where you should apply these speeds to the drivetrain */
+            drivetrain.applyRequest(() -> drive
+                    .withVelocityX(veloX.in(MetersPerSecond))
+                    .withVelocityY(veloY.in(MetersPerSecond))
+                    .withRotationalRate(0));
+        });
+
+        oi.align.whileTrue(alignCommand);
     }
 
     public Command getAutonomousCommand() {

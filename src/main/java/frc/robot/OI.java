@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class OI {
-    
+
     private CommandXboxController driver;
     private CommandXboxController operator;
 
@@ -21,7 +21,9 @@ public class OI {
     public final DoubleSupplier processed_drive_y;
     public final DoubleSupplier processed_drive_rot;
 
-    public OI(){
+    public final Trigger align;
+
+    public OI() {
         driver = new CommandXboxController(Constants.OI.driverPort);
         operator = new CommandXboxController(Constants.OI.operatorPort);
 
@@ -30,10 +32,12 @@ public class OI {
         drive_rot = () -> -driver.getRightX();
 
         processed_drive_x = () -> MathUtil.copyDirectionPow(drive_x.getAsDouble(), 2);
-        processed_drive_y = () ->  MathUtil.copyDirectionPow(drive_y.getAsDouble(), 2);
-        processed_drive_rot = () ->  MathUtil.copyDirectionPow(drive_rot.getAsDouble(), 2);
+        processed_drive_y = () -> MathUtil.copyDirectionPow(drive_y.getAsDouble(), 2);
+        processed_drive_rot = () -> MathUtil.copyDirectionPow(drive_rot.getAsDouble(), 2);
 
         gyroReset = driver.back();
+
+        align = driver.rightBumper();
     }
 
 }

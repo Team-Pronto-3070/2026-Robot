@@ -77,4 +77,15 @@ public class CameraSubsystem extends SubsystemBase {
     public double getEstimatedTimestamp() {
         return visionEstimation.timestampSeconds;
     }
+
+    public PhotonPipelineResult getLatestResult() {
+        var result = camera.getAllUnreadResults();
+
+        if (!result.isEmpty()) {
+            PhotonPipelineResult latest = result.get(result.size() - 1); // Items are ordered oldest to newest
+            return latest;
+        }
+
+        return null;
+    }
 }
