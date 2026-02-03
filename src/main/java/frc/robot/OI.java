@@ -16,6 +16,7 @@ public class OI {
     public final DoubleSupplier drive_rot;
 
     public final Trigger gyroReset;
+    public final Trigger spindexer;
 
     public final DoubleSupplier processed_drive_x;
     public final DoubleSupplier processed_drive_y;
@@ -34,6 +35,8 @@ public class OI {
         processed_drive_rot = () ->  MathUtil.copyDirectionPow(drive_rot.getAsDouble(), 2);
 
         gyroReset = driver.back();
+
+        spindexer = driver.rightTrigger();
     }
 
 }
