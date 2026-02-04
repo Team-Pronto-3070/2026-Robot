@@ -16,11 +16,13 @@ public class OI {
     public final DoubleSupplier drive_rot;
 
     public final Trigger gyroReset;
-    public final Trigger spindexer;
-
+    
     public final DoubleSupplier processed_drive_x;
     public final DoubleSupplier processed_drive_y;
     public final DoubleSupplier processed_drive_rot;
+
+    public final Trigger shoot;
+    public final Trigger index;
 
     public OI(){
         driver = new CommandXboxController(Constants.OI.driverPort);
@@ -36,7 +38,8 @@ public class OI {
 
         gyroReset = driver.back();
 
-        spindexer = driver.rightTrigger();
+        index = driver.rightBumper();
+        shoot = driver.a();
     }
 
 }
