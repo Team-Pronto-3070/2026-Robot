@@ -6,6 +6,7 @@ import java.util.List;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.estimation.CameraTargetRelation;
 import org.photonvision.estimation.VisionEstimation;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -18,6 +19,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CameraSubsystem extends SubsystemBase {
@@ -32,6 +35,14 @@ public class CameraSubsystem extends SubsystemBase {
             new ArrayList<PhotonTrackedTarget>());
 
     public CameraSubsystem(String name, Transform3d transform) {
+        if (!RobotBase.isReal()) { // if in the simulator
+            camera = null;
+            cameraTransform = null;
+            poseEstimator = null;
+            
+            return;
+        }
+
         camera = new PhotonCamera(name);
         cameraTransform = transform;
 
@@ -41,6 +52,10 @@ public class CameraSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        if (camera == null) {
+            return;
+        }
+        
         var result = camera.getAllUnreadResults();
 
         if (!result.isEmpty()) {
