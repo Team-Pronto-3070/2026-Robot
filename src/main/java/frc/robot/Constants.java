@@ -89,6 +89,14 @@ public class Constants {
                 2.0, 2.0,
                 3.0, 3.0); // TODO: Test
 
+        /*
+         * When shooting on the move, we subtract the robot velocity from the target
+         * position to adjust the trajectory. I think this should technically be based
+         * off of the time it will take for the projectile to reach the target, but we
+         * will use a constant for now and change later if it is not good enough.
+         */
+        public static final double shootOnTheMoveScale = 2;
+
         public static final double shooterRatio = 1.2;
 
         public static final int mainShooterMotorID = 20; // TODO: fix

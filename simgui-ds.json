@@ -26,8 +26,8 @@
         },
         {},
         {
-          "decKey": 81,
-          "incKey": 69
+          "decKey": 74,
+          "incKey": 76
         }
       ],
       "axisCount": 5,
@@ -54,10 +54,7 @@
     },
     {
       "axisConfig": [
-        {
-          "decKey": 74,
-          "incKey": 76
-        },
+        {},
         {
           "decKey": 73,
           "incKey": 75

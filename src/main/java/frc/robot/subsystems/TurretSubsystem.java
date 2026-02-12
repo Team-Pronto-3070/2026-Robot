@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
 import java.lang.annotation.Target;
@@ -38,6 +39,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     private Pose2d turretPose = new Pose2d();
 
+    private Translation2d lastTurretTranslation = new Translation2d();
+
     private final Field2d field;
 
     public TurretSubsystem(Field2d field) {
@@ -48,8 +51,6 @@ public class TurretSubsystem extends SubsystemBase {
     public void periodic() {
 
     }
-
-    private final double[] m_poseArray = new double[3];
 
     // Give the turret a new robot position to calculate speeds for
     public void update(Pose2d pose) {
@@ -81,20 +82,25 @@ public class TurretSubsystem extends SubsystemBase {
                 Constants.Turret.turretToRobot.getY())
                 .rotateBy(pose.getRotation()).plus(pose.getTranslation());
 
+        Translation2d deltaTranslation = turret.minus(lastTurretTranslation);
+        lastTurretTranslation = turret;
+
+        target = target.minus(new Translation3d(deltaTranslation.getMeasureX(), deltaTranslation.getMeasureY(), Inches.of(0)).times(Constants.Turret.shootOnTheMoveScale));
+
         double angleToTarget = Math.atan2(turret.getY() - target.getY(), turret.getX() - target.getX());
         double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
 
         double robotAngle = pose.getRotation().getRadians();
         double targetShooterAngle = angleToTarget - robotAngle;
 
-        setShooterHeading(targetShooterAngle);
-
+        Pose2d lastTurretPose = turretPose;
         turretPose = new Pose2d(
-                new Translation2d(
-                        Constants.Turret.turretToRobot.getX(),
-                        Constants.Turret.turretToRobot.getY())
-                        .rotateBy(pose.getRotation()).plus(pose.getTranslation()),
+                turret,
                 pose.getRotation().plus(new Rotation2d(targetShooterAngle + Math.PI)));
+
+        
+
+        setShooterHeading(targetShooterAngle);
 
         field.getObject("shooter").setPose(turretPose);
 
