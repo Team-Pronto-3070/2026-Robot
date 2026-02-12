@@ -15,9 +15,11 @@ import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.RobotContainer;
 
 public class TurretSubsystem extends SubsystemBase {
 
@@ -28,20 +30,10 @@ public class TurretSubsystem extends SubsystemBase {
 
     private Pose2d turretPose = new Pose2d();
 
-    /* What to publish over networktables for telemetry */
-    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    private final Field2d field;
 
-    private final NetworkTable driveStateTable = inst.getTable("TurretState");
-    private final StructPublisher<Pose2d> turretPoseState = driveStateTable.getStructTopic("Pose", Pose2d.struct)
-            .publish();
-
-    /* Turret pose for field image */
-    private final NetworkTable table = inst.getTable("Pose");
-    private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("TurretState").publish();
-    private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
-
-    public TurretSubsystem() {
-
+    public TurretSubsystem(Field2d field) {
+        this.field = field;
     }
 
     @Override
@@ -58,11 +50,15 @@ public class TurretSubsystem extends SubsystemBase {
 
         Translation3d target = alliance.equals(Alliance.Blue) ? Constants.Turret.blueHub : Constants.Turret.redHub;
 
+        Translation2d turret = new Translation2d(
+                        Constants.Turret.turretToRobot.getX(),
+                        Constants.Turret.turretToRobot.getY())
+                        .rotateBy(pose.getRotation()).plus(pose.getTranslation());
+        
+        double angleToTarget = Math.atan2(turret.getY() - target.getY(), turret.getX() - target.getX());
+        double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
+        
         double robotAngle = pose.getRotation().getRadians();
-
-        double angleToTarget = Math.atan2(pose.getY() - target.getY(), pose.getX() - target.getX());
-        double distanceToTarget = Math.hypot(pose.getX() - target.getX(), pose.getY() - target.getY());
-
         double targetShooterAngle = angleToTarget - robotAngle;
 
         setShooterHeading(targetShooterAngle);
@@ -74,15 +70,9 @@ public class TurretSubsystem extends SubsystemBase {
                         .rotateBy(pose.getRotation()).plus(pose.getTranslation()),
                 pose.getRotation().plus(new Rotation2d(targetShooterAngle + Math.PI)));
 
-        turretPoseState.set(turretPose);
+        field.getObject("shooter").setPose(turretPose);
 
-        /* Telemeterize the pose to a Field2d */
-        fieldTypePub.set("Field2d");
-
-        m_poseArray[0] = turretPose.getX();
-        m_poseArray[1] = turretPose.getY();
-        m_poseArray[2] = turretPose.getRotation().getDegrees();
-        fieldPub.set(m_poseArray);
+        field.getObject("target").setPose(new Pose2d(target.toTranslation2d(), new Rotation2d()));
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is

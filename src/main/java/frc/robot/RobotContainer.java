@@ -15,6 +15,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -36,7 +37,7 @@ public class RobotContainer {
                         .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive
                                                                                  // motors
 
-        private final Telemetry logger = new Telemetry(MaxSpeed);
+        public final Telemetry logger = new Telemetry(MaxSpeed);
 
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
@@ -47,12 +48,14 @@ public class RobotContainer {
 
         public final SpindexerSubsytem spindexerSubsytem = new SpindexerSubsytem();
 
-        public final TurretSubsystem turretSubsystem = new TurretSubsystem();
+        public final TurretSubsystem turretSubsystem = new TurretSubsystem(logger.field);
 
         public RobotContainer() {
                 if (!RobotBase.isReal()) { // if in the simulator
                         DriverStation.silenceJoystickConnectionWarning(true);
                 }
+
+                SmartDashboard.putData("Field", logger.field);
 
                 configureBindings();
         }
