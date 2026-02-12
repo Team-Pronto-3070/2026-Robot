@@ -7,8 +7,13 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.units.measure.Distance;
 
 public class Constants {
+
+    public static final Distance fieldHeight = Inches.of(317.7);
+    public static final Distance fieldWidth = Inches.of(651.2);
+
     public static final class OI {
         public static final int driverPort = 0;
         public static final int operatorPort = 1;
@@ -35,19 +40,48 @@ public class Constants {
     }
 
     public static final class Turret {
+
+        private static final Distance allianceZoneWidth = Inches.of(158.6);
+        private static final Distance neutralZoneWidth = Inches.of(283.0);
+
         public static final Translation3d blueHub = new Translation3d(
-                Inches.of(158.6 + (47 / 2)),
-                Inches.of(317.7 / 2),
+                Inches.of(allianceZoneWidth.in(Inches) + (47 / 2)),
+                Inches.of(fieldHeight.in(Inches) / 2),
                 Inches.of(72));
 
         public static final Translation3d redHub = new Translation3d(
-                Inches.of(651.2 - (158.6 + (47 / 2))),
-                Inches.of(158.85),
+                Inches.of(fieldWidth.in(Inches) - (allianceZoneWidth.in(Inches) + (47 / 2))),
+                Inches.of(fieldHeight.in(Inches) / 2),
                 Inches.of(72));
+
+        private static final double ferryOffset = 24;
+
+        public static final Translation3d blueFerryLeft = new Translation3d(
+                Inches.of(ferryOffset),
+                Inches.of(fieldHeight.in(Inches) - ferryOffset),
+                Inches.of(0));
+
+        public static final Translation3d blueFerryRight = new Translation3d(
+                Inches.of(ferryOffset),
+                Inches.of(ferryOffset),
+                Inches.of(0));
+
+        public static final Translation3d redFerryLeft = new Translation3d(
+                Inches.of(fieldWidth.in(Inches) - ferryOffset),
+                Inches.of(ferryOffset),
+                Inches.of(0));
+
+        public static final Translation3d redFerryRight = new Translation3d(
+                Inches.of(fieldWidth.in(Inches) - ferryOffset),
+                Inches.of(fieldHeight.in(Inches) - ferryOffset),
+                Inches.of(0));
 
         public static final Translation2d turretToRobot = new Translation2d(
                 Inches.of(5.596),
                 Inches.of(0));
+
+        public static final Distance blueLineX = Inches.of(((fieldWidth.in(Inches) - neutralZoneWidth.in(Inches)) / 2));
+        public static final Distance redLineX = Inches.of(fieldWidth.in(Inches) - blueLineX.in(Inches));
 
         // Look up table of Shooter speeds and hub distances
         public static final Map<Double, Double> speedTable = Map.of(

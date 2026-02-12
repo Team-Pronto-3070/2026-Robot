@@ -1,6 +1,10 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Meters;
+
+import java.lang.annotation.Target;
 import java.sql.Driver;
+import java.util.List;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -8,11 +12,15 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -48,16 +56,34 @@ public class TurretSubsystem extends SubsystemBase {
         Alliance alliance = DriverStation.getAlliance().isPresent() ? DriverStation.getAlliance().get()
                 : DriverStation.Alliance.Blue;
 
+        Distance lineX = alliance.equals(Alliance.Blue) ? Constants.Turret.blueLineX : Constants.Turret.redLineX;
+
         Translation3d target = alliance.equals(Alliance.Blue) ? Constants.Turret.blueHub : Constants.Turret.redHub;
 
+        if (alliance.equals(Alliance.Blue)) {
+            if (pose.getTranslation().getX() > lineX.in(Meters)) {
+                if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
+                    target = Constants.Turret.blueFerryRight;
+                else
+                    target = Constants.Turret.blueFerryLeft;
+            }
+        } else {
+            if (pose.getTranslation().getX() < lineX.in(Meters)) {
+                if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
+                    target = Constants.Turret.redFerryLeft;
+                else
+                    target = Constants.Turret.redFerryRight;
+            }
+        }
+
         Translation2d turret = new Translation2d(
-                        Constants.Turret.turretToRobot.getX(),
-                        Constants.Turret.turretToRobot.getY())
-                        .rotateBy(pose.getRotation()).plus(pose.getTranslation());
-        
+                Constants.Turret.turretToRobot.getX(),
+                Constants.Turret.turretToRobot.getY())
+                .rotateBy(pose.getRotation()).plus(pose.getTranslation());
+
         double angleToTarget = Math.atan2(turret.getY() - target.getY(), turret.getX() - target.getX());
         double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
-        
+
         double robotAngle = pose.getRotation().getRadians();
         double targetShooterAngle = angleToTarget - robotAngle;
 
@@ -73,6 +99,15 @@ public class TurretSubsystem extends SubsystemBase {
         field.getObject("shooter").setPose(turretPose);
 
         field.getObject("target").setPose(new Pose2d(target.toTranslation2d(), new Rotation2d()));
+
+        Trajectory autoLine = TrajectoryGenerator.generateTrajectory(
+                new Pose2d(lineX.in(Meters), 0, Rotation2d.fromDegrees(90)),
+                List.of(),
+                new Pose2d(lineX.in(Meters), Constants.fieldHeight.in(Meters),
+                        Rotation2d.fromDegrees(90)),
+                new TrajectoryConfig(1, 1));
+
+        field.getObject("line").setTrajectory(autoLine);
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is
