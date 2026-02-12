@@ -2,6 +2,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 import java.util.Map;
+import java.util.TreeMap;
 
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -83,11 +84,24 @@ public class Constants {
         public static final Distance blueLineX = Inches.of(((fieldWidth.in(Inches) - neutralZoneWidth.in(Inches)) / 2));
         public static final Distance redLineX = Inches.of(fieldWidth.in(Inches) - blueLineX.in(Inches));
 
-        // Look up table of Shooter speeds and hub distances
+        // // Look up table of Shooter speeds and hub distances. Format is (Distance,
+        // [Shooter main speed, Shooter hood speed])
+        // public static final Map<Double, Double[]> speedTable = Map.of(
+        // 1.0, new Double[]{1.0, 1.0},
+        // 2.0, new Double[]{2.0, 2.0},
+        // 3.0, new Double[]{3.0, 3.0}); // TODO: Test
+
+        // Look up table of Shooter speeds and hub distances. Format is (Distance,
+        // Shooter speed)
         public static final Map<Double, Double> speedTable = Map.of(
-                1.0, 1.0,
-                2.0, 2.0,
-                3.0, 3.0); // TODO: Test
+                0.0, 0.0,
+                1.0, 1000.0,
+                2.0, 2000.0,
+                3.0, 3000.0,
+                6.0, 6000.0
+            ); // TODO: Test
+
+        public static final TreeMap<Double, Double> speedTreeMap = new TreeMap<>(speedTable);
 
         /*
          * When shooting on the move, we subtract the robot velocity from the target
@@ -95,7 +109,7 @@ public class Constants {
          * off of the time it will take for the projectile to reach the target, but we
          * will use a constant for now and change later if it is not good enough.
          */
-        public static final double shootOnTheMoveScale = 2;
+        public static final double shootOnTheMoveScale = 0.1;
 
         public static final double shooterRatio = 1.2;
 

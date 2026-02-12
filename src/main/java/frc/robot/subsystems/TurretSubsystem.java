@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.Meters;
 import java.lang.annotation.Target;
 import java.sql.Driver;
 import java.util.List;
+import java.util.TreeMap;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -40,6 +41,7 @@ public class TurretSubsystem extends SubsystemBase {
     private Pose2d turretPose = new Pose2d();
 
     private Translation2d lastTurretTranslation = new Translation2d();
+    private long lastUpdateTime = 0;
 
     private final Field2d field;
 
@@ -52,8 +54,45 @@ public class TurretSubsystem extends SubsystemBase {
 
     }
 
+    private double calculateSpeedForDistance(double targetDistance) {
+        TreeMap<Double, Double> treeMap = Constants.Turret.speedTreeMap;
+
+        // Handle exact matches
+        if (treeMap.containsKey(targetDistance)) {
+            return treeMap.get(targetDistance);
+        }
+
+        // Get the distances immediately below and above target
+        Double lowerDistance = treeMap.floorKey(targetDistance);
+        Double upperDistance = treeMap.ceilingKey(targetDistance);
+
+        // Handle out-of-range cases
+        if (lowerDistance == null) {
+            return treeMap.get(upperDistance); // Use closest
+        }
+        if (upperDistance == null) {
+            return treeMap.get(lowerDistance); // Use closest
+        }
+
+        // Linear interpolation
+        double lowerSpeed = treeMap.get(lowerDistance);
+        double upperSpeed = treeMap.get(upperDistance);
+
+        double ratio = (targetDistance - lowerDistance) / (upperDistance - lowerDistance);
+        return lowerSpeed + ratio * (upperSpeed - lowerSpeed);
+    }
+
     // Give the turret a new robot position to calculate speeds for
     public void update(Pose2d pose) {
+
+        // Calculate delta time in seconds
+        double deltaTime = (System.nanoTime() - lastUpdateTime) / 1e9;
+        lastUpdateTime = System.nanoTime();
+
+        /*
+         * Calculate the shooter's target to aim at based off of current position and
+         * alliance
+         */
         Alliance alliance = DriverStation.getAlliance().isPresent() ? DriverStation.getAlliance().get()
                 : DriverStation.Alliance.Blue;
 
@@ -77,30 +116,52 @@ public class TurretSubsystem extends SubsystemBase {
             }
         }
 
+        /*
+         * Calculate the current position of the turret on the field using the robot
+         * position. Also calculate the delta position to determine field relative
+         * velocity
+         */
         Translation2d turret = new Translation2d(
                 Constants.Turret.turretToRobot.getX(),
                 Constants.Turret.turretToRobot.getY())
                 .rotateBy(pose.getRotation()).plus(pose.getTranslation());
 
-        Translation2d deltaTranslation = turret.minus(lastTurretTranslation);
+        Translation2d deltaTranslation = turret.minus(lastTurretTranslation).div(deltaTime);
         lastTurretTranslation = turret;
 
-        target = target.minus(new Translation3d(deltaTranslation.getMeasureX(), deltaTranslation.getMeasureY(), Inches.of(0)).times(Constants.Turret.shootOnTheMoveScale));
+        target = target
+                .minus(new Translation3d(deltaTranslation.getMeasureX(), deltaTranslation.getMeasureY(), Inches.of(0))
+                        .times(Constants.Turret.shootOnTheMoveScale));
 
+        /*
+         * Calculate the actual angles for the shooter
+         */
         double angleToTarget = Math.atan2(turret.getY() - target.getY(), turret.getX() - target.getX());
-        double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
 
         double robotAngle = pose.getRotation().getRadians();
         double targetShooterAngle = angleToTarget - robotAngle;
 
-        Pose2d lastTurretPose = turretPose;
         turretPose = new Pose2d(
                 turret,
                 pose.getRotation().plus(new Rotation2d(targetShooterAngle + Math.PI)));
 
-        
+        targetShooterAngle += Math.PI; // subtract 180˚ so that 0˚ is directly forwards relative to the robot
+
+        /*
+         * Calculate desired shooter speed based on distance to target by interpolating
+         * through calibrated values
+         */
+
+        double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
+
+        double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
 
         setShooterHeading(targetShooterAngle);
+        // setShooterSpeed(targetShooterSpeed);
+
+        SmartDashboard.putNumber("Shooter Target Heading (˚)", targetShooterAngle * 180 / Math.PI);
+        SmartDashboard.putNumber("Shooter Target Distance (m)", distanceToTarget);
+        SmartDashboard.putNumber("Shooter Target Velocity (rpm)", targetShooterSpeed);
 
         field.getObject("shooter").setPose(turretPose);
 
@@ -117,7 +178,7 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is
-    // straight, + is clockwise)
+    // straight, + is counter-clockwise)
     public void setShooterHeading(double heading) {
         // TODO: Implement shooter rotation logic (Motion Magic?)
     }
