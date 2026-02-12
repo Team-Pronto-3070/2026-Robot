@@ -5,6 +5,7 @@ import java.util.Map;
 
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 
 public class Constants {
@@ -34,22 +35,25 @@ public class Constants {
     }
 
     public static final class Turret {
-        public static final Translation3d redHub = new Translation3d(
+        public static final Translation3d blueHub = new Translation3d(
                 Inches.of(158.6 + (47 / 2)),
                 Inches.of(317.7 / 2),
                 Inches.of(72));
 
-        public static final Translation3d blueHub = new Translation3d(
+        public static final Translation3d redHub = new Translation3d(
                 Inches.of(651.2 - (158.6 + (47 / 2))),
                 Inches.of(158.85),
                 Inches.of(72));
 
+        public static final Translation2d turretToRobot = new Translation2d(
+                Inches.of(5.596),
+                Inches.of(0));
+
         // Look up table of Shooter speeds and hub distances
         public static final Map<Double, Double> speedTable = Map.of(
-            1.0, 1.0,
-            2.0, 2.0,
-            3.0, 3.0
-        ); //TODO: Test
+                1.0, 1.0,
+                2.0, 2.0,
+                3.0, 3.0); // TODO: Test
 
         public static final double shooterRatio = 1.2;
 

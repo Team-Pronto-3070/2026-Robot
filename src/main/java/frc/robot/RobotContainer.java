@@ -77,6 +77,8 @@ public class RobotContainer {
                                         frontCamera.getEstimatedTimestamp());
                 }).ignoringDisable(true));
 
+                turretSubsystem.setDefaultCommand(turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
                 final var idle = new SwerveRequest.Idle();
