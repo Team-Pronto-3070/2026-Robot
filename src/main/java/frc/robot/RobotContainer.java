@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.subsystems.AutonomousSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.SpindexerSubsytem;
@@ -40,6 +41,8 @@ public class RobotContainer {
         public final Telemetry logger = new Telemetry(MaxSpeed);
 
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+        public final AutonomousSubsystem autonomousSubsystem = new AutonomousSubsystem(drivetrain, logger.field);
 
         public final OI oi = new OI();
 
@@ -73,25 +76,19 @@ public class RobotContainer {
                                                 .withVelocityY(oi.processed_drive_y.getAsDouble() * MaxSpeed)
                                                 // Drive counterclockwise with negative X(left)
                                                 .withRotationalRate(oi.processed_drive_rot.getAsDouble()
-                                                                * MaxAngularRate)));
+                                                                * MaxAngularRate))
+                                                .onlyIf(() -> !autonomousSubsystem.isSelfDriving()));
 
                 frontCamera.setDefaultCommand(frontCamera.runOnce(() -> {
                         drivetrain.addVisionMeasurement(frontCamera.getEstimatedPose(),
                                         frontCamera.getEstimatedTimestamp());
                 }).ignoringDisable(true));
 
-                turretSubsystem.setDefaultCommand(turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
-
-                // Idle while the robot is disabled. This ensures the configured
-                // neutral mode is applied to the drive motors while disabled.
-                final var idle = new SwerveRequest.Idle();
-                RobotModeTriggers.disabled().whileTrue(
-                                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
+                turretSubsystem.setDefaultCommand(
+                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
 
                 // Reset the field-centric heading on left bumper press.
                 oi.gyroReset.onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
-                drivetrain.registerTelemetry(logger::telemeterize);
 
                 oi.index.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.spin()));
                 oi.index.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
@@ -100,6 +97,15 @@ public class RobotContainer {
                                 .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 / Constants.Turret.shooterRatio)));
                 oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterSpeed(0.0)));
 
+                oi.trench.whileTrue(autonomousSubsystem.trench());
+
+                drivetrain.registerTelemetry(logger::telemeterize);
+
+                // Idle while the robot is disabled. This ensures the configured
+                // neutral mode is applied to the drive motors while disabled.
+                final var idle = new SwerveRequest.Idle();
+                RobotModeTriggers.disabled().whileTrue(
+                                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
         }
 
         public Command getAutonomousCommand() {

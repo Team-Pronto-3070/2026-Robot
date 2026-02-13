@@ -118,4 +118,8 @@ public class Constants {
         public static final int turretMotorID = 97; // TODO: fix
 
     }
+
+    public static final class Autonomous {
+        public static final Translation2d redLeftTrench = new Translation2d(fieldWidth.minus(Inches.of(180)), Inches.of(25));
+    }
 }

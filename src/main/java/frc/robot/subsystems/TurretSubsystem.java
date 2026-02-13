@@ -130,7 +130,7 @@ public class TurretSubsystem extends SubsystemBase {
         lastTurretTranslation = turret;
 
         target = target
-                .minus(new Translation3d(deltaTranslation.getMeasureX(), deltaTranslation.getMeasureY(), Inches.of(0))
+                .minus(new Translation3d(deltaTranslation.getX(), deltaTranslation.getY(), 0)
                         .times(Constants.Turret.shootOnTheMoveScale));
 
         /*
@@ -163,9 +163,9 @@ public class TurretSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Shooter Target Distance (m)", distanceToTarget);
         SmartDashboard.putNumber("Shooter Target Velocity (rpm)", targetShooterSpeed);
 
-        field.getObject("shooter").setPose(turretPose);
+        field.getObject("Shooter").setPose(turretPose);
 
-        field.getObject("target").setPose(new Pose2d(target.toTranslation2d(), new Rotation2d()));
+        field.getObject("Target").setPose(new Pose2d(target.toTranslation2d(), new Rotation2d()));
 
         Trajectory autoLine = TrajectoryGenerator.generateTrajectory(
                 new Pose2d(lineX.in(Meters), 0, Rotation2d.fromDegrees(90)),
@@ -174,7 +174,7 @@ public class TurretSubsystem extends SubsystemBase {
                         Rotation2d.fromDegrees(90)),
                 new TrajectoryConfig(1, 1));
 
-        field.getObject("line").setTrajectory(autoLine);
+        field.getObject("Neutral Zone Line").setTrajectory(autoLine);
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is

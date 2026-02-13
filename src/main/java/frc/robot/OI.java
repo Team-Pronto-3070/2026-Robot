@@ -24,6 +24,8 @@ public class OI {
     public final Trigger shoot;
     public final Trigger index;
 
+    public final Trigger trench;
+
     public OI(){
         driver = new CommandXboxController(Constants.OI.driverPort);
         operator = new CommandXboxController(Constants.OI.operatorPort);
@@ -40,6 +42,8 @@ public class OI {
 
         index = driver.rightBumper();
         shoot = driver.a();
+
+        trench = driver.rightBumper();
     }
 
 }
