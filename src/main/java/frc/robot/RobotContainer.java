@@ -7,12 +7,8 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -64,20 +60,17 @@ public class RobotContainer {
         }
 
         private void configureBindings() {
-                // Note that X is defined as forward according to WPILib convention,
-                // and Y is defined as to the left according to WPILib convention.
-                drivetrain.setDefaultCommand(
-                                // Drivetrain will execute this command periodically
-                                drivetrain.applyRequest(() ->
-                                // Drive forward with negative y (forward)
-                                drive.withVelocityX(oi.processed_drive_x.getAsDouble() * MaxSpeed)
+                drivetrain.setDefaultCommand(drivetrain.run(() -> {
+                        double driveX = oi.processed_drive_x.getAsDouble() * MaxSpeed;
+                        double driveY = oi.processed_drive_y.getAsDouble() * MaxSpeed;
+                        double rotationalRate = oi.processed_drive_rot.getAsDouble() * MaxAngularRate;
 
-                                                // Drive left with negative X (left)
-                                                .withVelocityY(oi.processed_drive_y.getAsDouble() * MaxSpeed)
-                                                // Drive counterclockwise with negative X(left)
-                                                .withRotationalRate(oi.processed_drive_rot.getAsDouble()
-                                                                * MaxAngularRate))
-                                                .onlyIf(() -> !autonomousSubsystem.isSelfDriving()));
+                        drivetrain.applyRequest(() -> drive
+                                        .withVelocityX(driveX)
+                                        .withVelocityY(driveY)
+                                        .withRotationalRate(rotationalRate))
+                                        .execute();
+                }));
 
                 frontCamera.setDefaultCommand(frontCamera.runOnce(() -> {
                         drivetrain.addVisionMeasurement(frontCamera.getEstimatedPose(),

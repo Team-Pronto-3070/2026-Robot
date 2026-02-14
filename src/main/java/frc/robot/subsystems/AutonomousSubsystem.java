@@ -1,8 +1,5 @@
 package frc.robot.subsystems;
 
-import java.util.List;
-import java.util.function.BooleanSupplier;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -40,20 +37,15 @@ public class AutonomousSubsystem extends SubsystemBase {
         private final SwerveRequest.FieldCentricFacingAngle request = new SwerveRequest.FieldCentricFacingAngle()
                         .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
                         .withDriveRequestType(DriveRequestType.Velocity)
-                        .withHeadingPID(4, 0, 0); /* tune this for your robot! */
-
-        /* Setting up bindings for necessary control of the swerve drive platform */
-        private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                        .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive
-                                                                                 // motors
+                        .withHeadingPID(5, 0, 0); /* tune this for your robot! */
 
         private static final APConstraints kConstraints = new APConstraints()
                         .withAcceleration(15.0)
-                        .withJerk(5.0);
+                        .withJerk(8.0);
 
         private static final APProfile kProfile = new APProfile(kConstraints)
-                        .withErrorXY(Centimeters.of(5))
-                        .withErrorTheta(Degrees.of(0.5))
+                        .withErrorXY(Centimeters.of(4))
+                        .withErrorTheta(Degrees.of(1))
                         .withBeelineRadius(Centimeters.of(8));
 
         public static final Autopilot kAutopilot = new Autopilot(kProfile);
@@ -121,8 +113,11 @@ public class AutonomousSubsystem extends SubsystemBase {
                                         break;
 
                                 case VELOCITY:
-                                        double vx = drivetrain.getState().Speeds.vxMetersPerSecond;
-                                        double vy = drivetrain.getState().Speeds.vyMetersPerSecond;
+                                        ChassisSpeeds speeds = ChassisSpeeds.fromRobotRelativeSpeeds(drivetrain.getState().Speeds, drivetrain.getState().Pose.getRotation());
+
+                                        double vx = speeds.vxMetersPerSecond;
+                                        double vy = speeds.vyMetersPerSecond;
+
                                         double db = Constants.Autonomous.velocityDeadband.in(MetersPerSecond);
 
                                         if (pose.getX() < Constants.Autonomous.blueTrenchLeft.getX()) {
@@ -218,8 +213,8 @@ public class AutonomousSubsystem extends SubsystemBase {
                         }
 
                         target = new APTarget(new Pose2d(trench,
-                                        new Rotation2d(Math.round(pose.getRotation().getRadians() / (Math.PI / 2))
-                                                        * (Math.PI / 2))))
+                                        new Rotation2d(Math.round(pose.getRotation().getRadians() / (Math.PI))
+                                                        * (Math.PI))))
                                         .withEntryAngle(pose.getX() > trench.getX()
                                                         ? Rotation2d.k180deg
                                                         : Rotation2d.kZero)
@@ -256,13 +251,6 @@ public class AutonomousSubsystem extends SubsystemBase {
                                         .withTargetDirection(headingReference));
                 })
                                 .until(() -> kAutopilot.atTarget(drivetrain.getState().Pose, target))
-                                // .andThen(() -> {
-                                // drivetrain.applyRequest(() -> drive
-                                // .withVelocityX(3.0)
-                                // .withVelocityY(0.0)
-                                // .withRotationalRate(0.0))
-                                // .withTimeout(5.0);
-                                // }, drivetrain)
                                 .finallyDo(() -> {
                                         selfDriving = false;
                                 });

@@ -167,14 +167,14 @@ public class TurretSubsystem extends SubsystemBase {
 
         field.getObject("Target").setPose(new Pose2d(target.toTranslation2d(), new Rotation2d()));
 
-        Trajectory autoLine = TrajectoryGenerator.generateTrajectory(
-                new Pose2d(lineX.in(Meters), 0, Rotation2d.fromDegrees(90)),
-                List.of(),
-                new Pose2d(lineX.in(Meters), Constants.fieldHeight.in(Meters),
-                        Rotation2d.fromDegrees(90)),
-                new TrajectoryConfig(1, 1));
+        // Trajectory autoLine = TrajectoryGenerator.generateTrajectory(
+        //         new Pose2d(lineX.in(Meters), 0, Rotation2d.fromDegrees(90)),
+        //         List.of(),
+        //         new Pose2d(lineX.in(Meters), Constants.fieldHeight.in(Meters),
+        //                 Rotation2d.fromDegrees(90)),
+        //         new TrajectoryConfig(1, 1));
 
-        field.getObject("Neutral Zone Line").setTrajectory(autoLine);
+        // field.getObject("Neutral Zone Line").setTrajectory(autoLine);
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is
