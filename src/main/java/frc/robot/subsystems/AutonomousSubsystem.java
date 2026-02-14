@@ -5,11 +5,15 @@ import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,6 +21,7 @@ import frc.robot.Constants;
 
 import static edu.wpi.first.units.Units.Centimeters;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -53,7 +58,7 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         public static final Autopilot kAutopilot = new Autopilot(kProfile);
 
-        private APTarget target = new APTarget(new Pose2d(Constants.Autonomous.redLeftTrench, new Rotation2d()))
+        private APTarget target = new APTarget(new Pose2d(new Translation2d(), new Rotation2d()))
                         .withEntryAngle(Rotation2d.kZero);
 
         private final Field2d field;
@@ -67,12 +72,159 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         @Override
         public void periodic() {
-                Pose2d pose = drivetrain.getState().Pose;
+                // Do not update target while moving towards it
+                if (!selfDriving) {
+                        Pose2d pose = drivetrain.getState().Pose;
 
-                target = new APTarget(new Pose2d(Constants.Autonomous.redLeftTrench, new Rotation2d(Math.round(pose.getRotation().getRadians() / (Math.PI / 2)) * (Math.PI / 2))))
-                                .withEntryAngle(pose.getX() > Constants.Autonomous.redLeftTrench.getX()
-                                                ? Rotation2d.k180deg
-                                                : Rotation2d.kZero).withVelocity(5.0);
+                        Translation2d trench = new Translation2d();
+
+                        Alliance alliance = DriverStation.getAlliance().isPresent() ? DriverStation.getAlliance().get()
+                                        : DriverStation.Alliance.Blue;
+
+                        Distance cutoff = Constants.fieldWidth.div(2);
+
+                        switch (Constants.Autonomous.trenchMethod) {
+                                default: // NEAREST
+                                        if (pose.getMeasureX().lt(cutoff)) {
+                                                if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                else
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                        } else {
+                                                if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+                                                else
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                        }
+                                        break;
+
+                                case NEAREST_BIASED:
+                                        cutoff = Constants.fieldWidth.div(2)
+                                                        .plus(alliance.equals(Alliance.Blue)
+                                                                        ? Constants.Autonomous.allianceBias
+                                                                        : Constants.Autonomous.allianceBias
+                                                                                        .unaryMinus());
+
+                                        if (pose.getMeasureX().lt(cutoff)) {
+                                                if (pose.getTranslation()
+                                                                .getY() < Constants.fieldHeight.in(Meters) / 2)
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                else
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                        } else {
+                                                if (pose.getTranslation()
+                                                                .getY() < Constants.fieldHeight.in(Meters) / 2)
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+                                                else
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                        }
+                                        break;
+
+                                case VELOCITY:
+                                        double vx = drivetrain.getState().Speeds.vxMetersPerSecond;
+                                        double vy = drivetrain.getState().Speeds.vyMetersPerSecond;
+                                        double db = Constants.Autonomous.velocityDeadband.in(MetersPerSecond);
+
+                                        if (pose.getX() < Constants.Autonomous.blueTrenchLeft.getX()) {
+                                                if (vy > db) {
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                                } else if (vy < -db) {
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                } else {
+                                                        if (Constants.fieldHeight.div(2).gt(pose.getMeasureY())) {
+                                                                trench = Constants.Autonomous.blueTrenchRight;
+                                                        } else {
+                                                                trench = Constants.Autonomous.blueTrenchLeft;
+                                                        }
+                                                }
+                                        } else if (pose.getX() > Constants.Autonomous.redTrenchLeft.getX()) {
+                                                if (vy > db) {
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                                } else if (vy < -db) {
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+                                                } else {
+                                                        if (Constants.fieldHeight.div(2).gt(pose.getMeasureY())) {
+                                                                trench = Constants.Autonomous.redTrenchLeft;
+                                                        } else {
+                                                                trench = Constants.Autonomous.redTrenchRight;
+                                                        }
+                                                }
+                                        } else {
+                                                boolean movingUp = false;
+                                                boolean movingDown = false;
+                                                boolean movingLeft = false;
+                                                boolean movingRight = false;
+
+                                                boolean topHalf = false;
+                                                boolean leftHalf = false;
+
+                                                
+                                                if (vx > db)
+                                                        movingRight = true;
+                                                else if (vx < -db)
+                                                        movingLeft = true;
+                                                
+                                                if (vy > db)
+                                                        movingUp = true;
+                                                else if (vy < -db)
+                                                        movingDown = true;
+                                                
+                                                if (pose.getMeasureX().lt(Constants.fieldWidth.div(2)))
+                                                        leftHalf = true;
+                                                
+                                                if (pose.getMeasureY().gt(Constants.fieldHeight.div(2)))
+                                                        topHalf = true;
+
+                                                // System.out.println("vx: " + vx + ", vy: " + vy);
+                                                // System.out.println("Moving Up: " + movingUp + ", Moving Down: " + movingDown);
+
+                                                if (movingUp & movingLeft)
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                                else if (movingDown & movingLeft)
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                else if (movingUp & movingRight)
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                                else if (movingDown & movingRight)
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+
+                                                else if (movingLeft & topHalf)
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                                else if (movingLeft & !topHalf)
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                else if (movingRight & topHalf)
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                                else if (movingRight & !topHalf)
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+
+                                                else if (movingUp & leftHalf)
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                                else if (movingDown & leftHalf)
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                else if (movingUp & !leftHalf)
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                                else if (movingDown & !leftHalf)
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+                                                
+                                                else if (topHalf & leftHalf)
+                                                        trench = Constants.Autonomous.blueTrenchLeft;
+                                                else if (!topHalf & leftHalf)
+                                                        trench = Constants.Autonomous.blueTrenchRight;
+                                                else if (topHalf & !leftHalf)
+                                                        trench = Constants.Autonomous.redTrenchRight;
+                                                else if (!topHalf & !leftHalf)
+                                                        trench = Constants.Autonomous.redTrenchLeft;
+                                        }
+                                        break;
+                        }
+
+                        target = new APTarget(new Pose2d(trench,
+                                        new Rotation2d(Math.round(pose.getRotation().getRadians() / (Math.PI / 2))
+                                                        * (Math.PI / 2))))
+                                        .withEntryAngle(pose.getX() > trench.getX()
+                                                        ? Rotation2d.k180deg
+                                                        : Rotation2d.kZero)
+                                        .withVelocity(5.0);
+                }
         }
 
         @Override
@@ -105,14 +257,20 @@ public class AutonomousSubsystem extends SubsystemBase {
                 })
                                 .until(() -> kAutopilot.atTarget(drivetrain.getState().Pose, target))
                                 // .andThen(() -> {
-                                //         drivetrain.applyRequest(() -> drive
-                                //                         .withVelocityX(3.0)
-                                //                         .withVelocityY(0.0)
-                                //                         .withRotationalRate(0.0))
-                                //                         .withTimeout(5.0);
+                                // drivetrain.applyRequest(() -> drive
+                                // .withVelocityX(3.0)
+                                // .withVelocityY(0.0)
+                                // .withRotationalRate(0.0))
+                                // .withTimeout(5.0);
                                 // }, drivetrain)
                                 .finallyDo(() -> {
                                         selfDriving = false;
                                 });
+        }
+
+        public enum TrenchMethod {
+                NEAREST,
+                NEAREST_BIASED,
+                VELOCITY
         }
 }
