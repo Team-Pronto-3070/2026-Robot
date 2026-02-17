@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
@@ -25,21 +26,27 @@ public class Constants {
         }
 
         public static final class Vision {
-                public static final class FrontCamera {
-
-                        public static final String name = "Front";
+                public static final class FrontLeftCamera {
+                        public static final String name = "Front Left";
 
                         public static final Transform3d transform = new Transform3d(
-                                        new Translation3d(-0.02, 0.19, 0),
-                                        new Rotation3d(0, 0.52, 0));
+                                        new Translation3d(
+                                                        Inches.of((26.5 / 2) - 1.25),
+                                                        Inches.of(21.724 / 2),
+                                                        Inches.of(20.5)),
+                                        new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(20)));
+
                 }
 
-                public static final class FrontCamera2 {
-                        public static final String name = "Front2";
+                public static final class FrontRightCamera {
+                        public static final String name = "Front Right";
 
                         public static final Transform3d transform = new Transform3d(
-                                        new Translation3d(0.02, 0.19, 0),
-                                        new Rotation3d(0, 0.52, 0));
+                                        new Translation3d(
+                                                        Inches.of((26.5 / 2) + 1.25),
+                                                        Inches.of(-21.724 / 2),
+                                                        Inches.of(20.5)),
+                                        new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-20)));
                 }
 
         }
@@ -119,8 +126,15 @@ public class Constants {
 
                 public static final int mainShooterMotorID = 20; // TODO: fix
                 public static final int hoodShooterMotorID = 21; // TODO: fix
-                public static final int turretMotorID = 97; // TODO: fix
+                public static final int turretMotorID = 19; // TODO: fix
 
+                public static final double turretBeltRatio = 126.0 / 16.0;
+
+        }
+
+        public static final class Spindexer {
+                public static final int spindexerMotorID = 16; // TODO: fix
+                public static final int indexerMotorID = 17; // TODO: fix
         }
 
         public static final class Autonomous {
@@ -129,9 +143,11 @@ public class Constants {
                 public static final Translation2d blueTrenchRight = new Translation2d(Inches.of(180),
                                 Inches.of(25));
 
-                public static final Translation2d redTrenchLeft = new Translation2d(fieldWidth.minus(Inches.of(180)),
+                public static final Translation2d redTrenchLeft = new Translation2d(
+                                fieldWidth.minus(Inches.of(180)),
                                 Inches.of(25));
-                public static final Translation2d redTrenchRight = new Translation2d(fieldWidth.minus(Inches.of(180)),
+                public static final Translation2d redTrenchRight = new Translation2d(
+                                fieldWidth.minus(Inches.of(180)),
                                 fieldHeight.minus(Inches.of(25)));
 
                 /*
@@ -140,7 +156,8 @@ public class Constants {
                  * NEAREST: Drive under the closest trench
                  * NEAREST_BIASED: Drive under the closest trench but with a bias towards the
                  * current alliance side
-                 * VELOCITY: Use the current robot velocity to pick the trench we are driving towards
+                 * VELOCITY: Use the current robot velocity to pick the trench we are driving
+                 * towards
                  */
                 public static final TrenchMethod trenchMethod = TrenchMethod.VELOCITY;
 

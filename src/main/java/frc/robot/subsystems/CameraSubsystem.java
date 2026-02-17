@@ -34,14 +34,16 @@ public class CameraSubsystem extends SubsystemBase {
     private EstimatedRobotPose visionEstimation = new EstimatedRobotPose(new Pose3d(), 0,
             new ArrayList<PhotonTrackedTarget>());
 
+            private List<PhotonTrackedTarget> stdDevs = new ArrayList<PhotonTrackedTarget>();
+
     public CameraSubsystem(String name, Transform3d transform) {
-        if (!RobotBase.isReal()) { // if in the simulator
-            camera = null;
-            cameraTransform = null;
-            poseEstimator = null;
+        // if (!RobotBase.isReal()) { // if in the simulator
+        //     camera = null;
+        //     cameraTransform = null;
+        //     poseEstimator = null;
             
-            return;
-        }
+        //     return;
+        // }
 
         camera = new PhotonCamera(name);
         cameraTransform = transform;
@@ -52,9 +54,9 @@ public class CameraSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (camera == null) {
-            return;
-        }
+        // if (camera == null) {
+        //     return;
+        // }
         
         var result = camera.getAllUnreadResults();
 
@@ -67,12 +69,14 @@ public class CameraSubsystem extends SubsystemBase {
             if (optional.isPresent()) {
                 // Use the multi tag pose if available
                 visionEstimation = optional.get();
+                stdDevs = latest.getTargets();
             } else {
                 // Otherwise, fall back to lowest ambiguity single tag pose
                 optional = poseEstimator.estimateLowestAmbiguityPose(latest);
-
+                
                 if (optional.isPresent()) {
                     visionEstimation = optional.get();
+                    stdDevs = latest.getTargets();
                 }
             }
         }
@@ -91,5 +95,9 @@ public class CameraSubsystem extends SubsystemBase {
     // Get the timestamp of the latest vision-based pose estimation
     public double getEstimatedTimestamp() {
         return visionEstimation.timestampSeconds;
+    }
+
+    public List<PhotonTrackedTarget> getStdDevs() {
+        return stdDevs;
     }
 }

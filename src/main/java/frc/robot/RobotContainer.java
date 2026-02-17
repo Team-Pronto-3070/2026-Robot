@@ -42,8 +42,11 @@ public class RobotContainer {
 
         public final OI oi = new OI();
 
-        public final CameraSubsystem frontCamera = new CameraSubsystem(Constants.Vision.FrontCamera.name,
-                        Constants.Vision.FrontCamera.transform);
+        public final CameraSubsystem frontLeftCamera = new CameraSubsystem(Constants.Vision.FrontLeftCamera.name,
+                        Constants.Vision.FrontLeftCamera.transform);
+
+        public final CameraSubsystem frontRightCamera = new CameraSubsystem(Constants.Vision.FrontRightCamera.name,
+                        Constants.Vision.FrontRightCamera.transform);
 
         public final SpindexerSubsytem spindexerSubsytem = new SpindexerSubsytem();
 
@@ -72,13 +75,26 @@ public class RobotContainer {
                                         .execute();
                 }));
 
-                frontCamera.setDefaultCommand(frontCamera.runOnce(() -> {
-                        drivetrain.addVisionMeasurement(frontCamera.getEstimatedPose(),
-                                        frontCamera.getEstimatedTimestamp());
+                frontLeftCamera.setDefaultCommand(frontLeftCamera.run(() -> {
+                        drivetrain.addVisionMeasurement(frontLeftCamera.getEstimatedPose(), 
+                                        frontLeftCamera.getEstimatedTimestamp());
+                }).ignoringDisable(true));
+                
+                frontRightCamera.setDefaultCommand(frontRightCamera.run(() -> {
+                        drivetrain.addVisionMeasurement(frontRightCamera.getEstimatedPose(),
+                                        frontRightCamera.getEstimatedTimestamp());
                 }).ignoringDisable(true));
 
                 turretSubsystem.setDefaultCommand(
                                 turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                turretSubsystem.setDefaultCommand(
+                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+
+                // Idle while the robot is disabled. This ensures the configured
+                // neutral mode is applied to the drive motors while disabled.
+                final var idle = new SwerveRequest.Idle();
+                RobotModeTriggers.disabled().whileTrue(
+                                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
                 // Reset the field-centric heading on left bumper press.
                 oi.gyroReset.onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
@@ -86,19 +102,19 @@ public class RobotContainer {
                 oi.index.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.spin()));
                 oi.index.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
 
-                oi.shoot.onTrue(turretSubsystem
-                                .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 / Constants.Turret.shooterRatio)));
-                oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterSpeed(0.0)));
+                // oi.shoot.onTrue(turretSubsystem
+                // .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
+                // Constants.Turret.shooterRatio)));
+                // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
+                // turretSubsystem.setShooterSpeed(0.0)));
 
-                oi.trench.whileTrue(autonomousSubsystem.trench());
+                // oi.shoot.onTrue(turretSubsystem
+                //                 .runOnce(() -> turretSubsystem.setShooterHeading(Math.PI / 2)));
+                // oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(Math.PI)));
+
+                // oi.trench.whileTrue(autonomousSubsystem.trench());
 
                 drivetrain.registerTelemetry(logger::telemeterize);
-
-                // Idle while the robot is disabled. This ensures the configured
-                // neutral mode is applied to the drive motors while disabled.
-                final var idle = new SwerveRequest.Idle();
-                RobotModeTriggers.disabled().whileTrue(
-                                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
         }
 
         public Command getAutonomousCommand() {

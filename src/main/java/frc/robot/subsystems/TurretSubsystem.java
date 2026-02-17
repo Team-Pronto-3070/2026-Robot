@@ -8,6 +8,8 @@ import java.sql.Driver;
 import java.util.List;
 import java.util.TreeMap;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -47,6 +49,32 @@ public class TurretSubsystem extends SubsystemBase {
 
     public TurretSubsystem(Field2d field) {
         this.field = field;
+
+        // in init function
+        var talonFXConfigs = new TalonFXConfiguration();
+
+        // set slot 0 gains
+        var slot0Configs = talonFXConfigs.Slot0;
+        slot0Configs.kS = 0.25; // Add 0.25 V output to overcome static friction
+        slot0Configs.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
+        slot0Configs.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
+        slot0Configs.kP = 4.8; // A position error of 2.5 rotations results in 12 V output
+        slot0Configs.kI = 0; // no output for integrated error
+        slot0Configs.kD = 0.1; // A velocity error of 1 rps results in 0.1 V output
+
+        // set Motion Magic settings
+        var motionMagicConfigs = talonFXConfigs.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 10; // Target cruise velocity of 80 rps
+        motionMagicConfigs.MotionMagicAcceleration = 5; // Target acceleration of 160 rps/s (0.5 seconds)
+        // motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity
+        // of 80 rps
+        // motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of
+        // 160 rps/s (0.5 seconds)
+        motionMagicConfigs.MotionMagicJerk = 1600; // Target jerk of 1600 rps/s/s (0.1 seconds)
+
+        turretMotor.getConfigurator().apply(talonFXConfigs);
+
+        turretMotor.setPosition(0.5 * Constants.Turret.turretBeltRatio);
     }
 
     @Override
@@ -156,7 +184,7 @@ public class TurretSubsystem extends SubsystemBase {
 
         double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
 
-        setShooterHeading(targetShooterAngle);
+        // setShooterHeading(targetShooterAngle);
         // setShooterSpeed(targetShooterSpeed);
 
         SmartDashboard.putNumber("Shooter Target Heading (˚)", targetShooterAngle * 180 / Math.PI);
@@ -180,7 +208,10 @@ public class TurretSubsystem extends SubsystemBase {
     // Set the shooter to a target heading in radians relative to the robot (0rad is
     // straight, + is counter-clockwise)
     public void setShooterHeading(double heading) {
-        // TODO: Implement shooter rotation logic (Motion Magic?)
+        final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
+
+        turretMotor.setControl(
+                m_request.withPosition((Math.PI + (heading / (2 * Math.PI))) * Constants.Turret.turretBeltRatio));
     }
 
     public void setShooterSpeed(double speed) {
