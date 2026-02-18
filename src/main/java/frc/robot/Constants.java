@@ -7,10 +7,14 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import java.util.Map;
 import java.util.TreeMap;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.AutonomousSubsystem.TrenchMethod;
@@ -26,29 +30,78 @@ public class Constants {
         }
 
         public static final class Vision {
-                public static final class FrontLeftCamera {
-                        public static final String name = "Front Left";
+                public static final class CameraParams {
+                        public final String name;
+                        public final Transform3d transform;
+                        public final Matrix<N3, N1> singleTagStdDevs;
+                        public final Matrix<N3, N1> multiTagStdDevs;
 
-                        public static final Transform3d transform = new Transform3d(
-                                        new Translation3d(
-                                                        Inches.of((26.5 / 2) - 1.25),
-                                                        Inches.of(21.724 / 2),
-                                                        Inches.of(20.5)),
-                                        new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(20)));
-
+                        CameraParams(String name, Transform3d transform, Matrix<N3, N1> singleTagStdDevs,
+                                        Matrix<N3, N1> multiTagStdDevs) {
+                                this.name = name;
+                                this.transform = transform;
+                                this.singleTagStdDevs = singleTagStdDevs;
+                                this.multiTagStdDevs = multiTagStdDevs;
+                        }
                 }
 
-                public static final class FrontRightCamera {
-                        public static final String name = "Front Right";
+                // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
-                        public static final Transform3d transform = new Transform3d(
-                                        new Translation3d(
-                                                        Inches.of((26.5 / 2) + 1.25),
-                                                        Inches.of(-21.724 / 2),
-                                                        Inches.of(20.5)),
-                                        new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-20)));
-                }
+                public static final CameraParams leftParams = new CameraParams(
+                                "Left",
+                                new Transform3d(
+                                                new Translation3d(
+                                                                Inches.of(9.753),
+                                                                Inches.of(12.6),
+                                                                Inches.of(20.5)),
+                                                new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(90))),
+                                // The standard deviations of our vision estimated poses, which affect
+                                // correction rate
+                                // TODO: Experiment and determine estimation noise on an actual robot
+                                VecBuilder.fill(4, 4, 8),
+                                VecBuilder.fill(0.5, 0.5, 1));
 
+                public static final CameraParams frontLeftParams = new CameraParams(
+                                "Front Left",
+                                new Transform3d(
+                                                new Translation3d(
+                                                                Inches.of((26.5 / 2) - 1.25),
+                                                                Inches.of(21.724 / 2),
+                                                                Inches.of(20.5)),
+                                                new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(20))),
+                                // The standard deviations of our vision estimated poses, which affect
+                                // correction rate
+                                // TODO: Experiment and determine estimation noise on an actual robot
+                                VecBuilder.fill(4, 4, 8),
+                                VecBuilder.fill(0.5, 0.5, 1));
+
+                public static final CameraParams frontRightParams = new CameraParams(
+                                "Front Right",
+                                new Transform3d(
+                                                new Translation3d(
+                                                                Inches.of((26.5 / 2) + 1.25),
+                                                                Inches.of(-21.724 / 2),
+                                                                Inches.of(20.5)),
+                                                new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-20))),
+                                // The standard deviations of our vision estimated poses, which affect
+                                // correction rate
+                                // TODO: Experiment and determine estimation noise on an actual robot
+                                VecBuilder.fill(4, 4, 8),
+                                VecBuilder.fill(0.5, 0.5, 1));
+
+                public static final CameraParams rightParams = new CameraParams(
+                                "Right",
+                                new Transform3d(
+                                                new Translation3d(
+                                                                Inches.of(9.753),
+                                                                Inches.of(-12.6),
+                                                                Inches.of(20.5)),
+                                                new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-90))),
+                                // The standard deviations of our vision estimated poses, which affect
+                                // correction rate
+                                // TODO: Experiment and determine estimation noise on an actual robot
+                                VecBuilder.fill(4, 4, 8),
+                                VecBuilder.fill(0.5, 0.5, 1));
         }
 
         public static final class Turret {

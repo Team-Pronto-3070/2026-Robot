@@ -42,11 +42,10 @@ public class RobotContainer {
 
         public final OI oi = new OI();
 
-        public final CameraSubsystem frontLeftCamera = new CameraSubsystem(Constants.Vision.FrontLeftCamera.name,
-                        Constants.Vision.FrontLeftCamera.transform);
-
-        public final CameraSubsystem frontRightCamera = new CameraSubsystem(Constants.Vision.FrontRightCamera.name,
-                        Constants.Vision.FrontRightCamera.transform);
+        public final CameraSubsystem leftCamera = new CameraSubsystem(Constants.Vision.leftParams);
+        public final CameraSubsystem frontLeftCamera = new CameraSubsystem(Constants.Vision.frontLeftParams);
+        public final CameraSubsystem frontRightCamera = new CameraSubsystem(Constants.Vision.frontRightParams);
+        public final CameraSubsystem rightCamera = new CameraSubsystem(Constants.Vision.rightParams);
 
         public final SpindexerSubsytem spindexerSubsytem = new SpindexerSubsytem();
 
@@ -75,18 +74,42 @@ public class RobotContainer {
                                         .execute();
                 }));
 
-                frontLeftCamera.setDefaultCommand(frontLeftCamera.run(() -> {
-                        drivetrain.addVisionMeasurement(frontLeftCamera.getEstimatedPose(), 
-                                        frontLeftCamera.getEstimatedTimestamp());
-                }).ignoringDisable(true));
-                
-                frontRightCamera.setDefaultCommand(frontRightCamera.run(() -> {
-                        drivetrain.addVisionMeasurement(frontRightCamera.getEstimatedPose(),
-                                        frontRightCamera.getEstimatedTimestamp());
+                leftCamera.setDefaultCommand(leftCamera.run(() -> {
+                        leftCamera.getLatestEstimation().ifPresent(est -> {
+                                drivetrain.addVisionMeasurement(
+                                                est.estimatedPose.toPose2d(),
+                                                est.timestampSeconds,
+                                                leftCamera.getEstimationStdDevs());
+                        });
                 }).ignoringDisable(true));
 
-                turretSubsystem.setDefaultCommand(
-                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                frontLeftCamera.setDefaultCommand(frontLeftCamera.run(() -> {
+                        frontLeftCamera.getLatestEstimation().ifPresent(est -> {
+                                drivetrain.addVisionMeasurement(
+                                                est.estimatedPose.toPose2d(),
+                                                est.timestampSeconds,
+                                                frontLeftCamera.getEstimationStdDevs());
+                        });
+                }).ignoringDisable(true));
+
+                frontRightCamera.setDefaultCommand(frontRightCamera.run(() -> {
+                        frontRightCamera.getLatestEstimation().ifPresent(est -> {
+                                drivetrain.addVisionMeasurement(
+                                                est.estimatedPose.toPose2d(),
+                                                est.timestampSeconds,
+                                                frontRightCamera.getEstimationStdDevs());
+                        });
+                }).ignoringDisable(true));
+
+                rightCamera.setDefaultCommand(rightCamera.run(() -> {
+                        rightCamera.getLatestEstimation().ifPresent(est -> {
+                                drivetrain.addVisionMeasurement(
+                                                est.estimatedPose.toPose2d(),
+                                                est.timestampSeconds,
+                                                rightCamera.getEstimationStdDevs());
+                        });
+                }).ignoringDisable(true));
+
                 turretSubsystem.setDefaultCommand(
                                 turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
 
@@ -109,10 +132,11 @@ public class RobotContainer {
                 // turretSubsystem.setShooterSpeed(0.0)));
 
                 // oi.shoot.onTrue(turretSubsystem
-                //                 .runOnce(() -> turretSubsystem.setShooterHeading(Math.PI / 2)));
-                // oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(Math.PI)));
+                // .runOnce(() -> turretSubsystem.setShooterHeading(Math.PI / 2)));
+                // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
+                // turretSubsystem.setShooterHeading(Math.PI)));
 
-                // oi.trench.whileTrue(autonomousSubsystem.trench());
+                oi.trench.whileTrue(autonomousSubsystem.trench());
 
                 drivetrain.registerTelemetry(logger::telemeterize);
         }

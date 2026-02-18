@@ -45,7 +45,7 @@ public class Telemetry {
 
     /* Robot swerve drive state */
     private final NetworkTable driveStateTable = inst.getTable("DriveState");
-    // private final StructPublisher<Pose2d> drivePose = driveStateTable.getStructTopic("Pose", Pose2d.struct).publish();
+    private final StructPublisher<Pose2d> drivePose = driveStateTable.getStructTopic("Pose", Pose2d.struct).publish();
     private final StructPublisher<ChassisSpeeds> driveSpeeds = driveStateTable
             .getStructTopic("Speeds", ChassisSpeeds.struct).publish();
     private final StructArrayPublisher<SwerveModuleState> driveModuleStates = driveStateTable
@@ -93,7 +93,7 @@ public class Telemetry {
                     .append(new MechanismLigament2d("Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite))),
     };
 
-    // private final double[] m_poseArray = new double[3];
+//     private final double[] m_poseArray = new double[3];
 
     /**
      * Accept the swerve drive state and telemeterize it to SmartDashboard and
@@ -101,7 +101,7 @@ public class Telemetry {
      */
     public void telemeterize(SwerveDriveState state) {
         /* Telemeterize the swerve drive state */
-        // drivePose.set(state.Pose);
+        drivePose.set(state.Pose);
         driveSpeeds.set(state.Speeds);
         driveModuleStates.set(state.ModuleStates);
         driveModuleTargets.set(state.ModuleTargets);
