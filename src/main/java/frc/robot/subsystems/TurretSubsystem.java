@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -29,6 +30,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.RobotContainer;
@@ -53,6 +55,9 @@ public class TurretSubsystem extends SubsystemBase {
         // in init function
         var talonFXConfigs = new TalonFXConfiguration();
 
+        // talonFXConfigs.MotorOutput.Inverted =
+        // InvertedValue.CounterClockwise_Positive;
+
         // set slot 0 gains
         var slot0Configs = talonFXConfigs.Slot0;
         slot0Configs.kS = 0.25; // Add 0.25 V output to overcome static friction
@@ -74,7 +79,7 @@ public class TurretSubsystem extends SubsystemBase {
 
         turretMotor.getConfigurator().apply(talonFXConfigs);
 
-        turretMotor.setPosition(0.5 * Constants.Turret.turretBeltRatio);
+        // turretMotor.setPosition(0.5 * Constants.Turret.turretBeltRatio);
     }
 
     @Override
@@ -173,7 +178,8 @@ public class TurretSubsystem extends SubsystemBase {
                 turret,
                 pose.getRotation().plus(new Rotation2d(targetShooterAngle + Math.PI)));
 
-        targetShooterAngle += Math.PI; // subtract 180˚ so that 0˚ is directly forwards relative to the robot
+        // targetShooterAngle += Math.PI; // subtract 180˚ so that 0˚ is directly forwards relative to the robot
+        // targetShooterAngle *= -1;
 
         /*
          * Calculate desired shooter speed based on distance to target by interpolating
@@ -184,7 +190,7 @@ public class TurretSubsystem extends SubsystemBase {
 
         double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
 
-        // setShooterHeading(targetShooterAngle);
+        setShooterHeading(targetShooterAngle);
         // setShooterSpeed(targetShooterSpeed);
 
         SmartDashboard.putNumber("Shooter Target Heading (˚)", targetShooterAngle * 180 / Math.PI);
@@ -196,22 +202,44 @@ public class TurretSubsystem extends SubsystemBase {
         field.getObject("Target").setPose(new Pose2d(target.toTranslation2d(), new Rotation2d()));
 
         // Trajectory autoLine = TrajectoryGenerator.generateTrajectory(
-        //         new Pose2d(lineX.in(Meters), 0, Rotation2d.fromDegrees(90)),
-        //         List.of(),
-        //         new Pose2d(lineX.in(Meters), Constants.fieldHeight.in(Meters),
-        //                 Rotation2d.fromDegrees(90)),
-        //         new TrajectoryConfig(1, 1));
+        // new Pose2d(lineX.in(Meters), 0, Rotation2d.fromDegrees(90)),
+        // List.of(),
+        // new Pose2d(lineX.in(Meters), Constants.fieldHeight.in(Meters),
+        // Rotation2d.fromDegrees(90)),
+        // new TrajectoryConfig(1, 1));
 
         // field.getObject("Neutral Zone Line").setTrajectory(autoLine);
+    }
+
+    public Command calibrateHeading() {
+        // return this.run(() -> {
+        // turretMotor.stopMotor();
+        // turretMotor.set(0.05);
+        // // System.out.println("Calibrating Turret");
+        // }).until(() -> turretMotor.getTorqueCurrent().getValueAsDouble() > 22.0)
+        // .andThen(this.runOnce(() -> {
+        // // System.out.println("Turret Current Limit Reached");
+        // turretMotor.stopMotor();
+        // double heading = 170 * (Math.PI / 180);
+        // // turretMotor.setPosition(((heading / (2 * Math.PI))) *
+        // Constants.Turret.turretBeltRatio);
+        // turretMotor.setPosition(0 * Constants.Turret.turretBeltRatio);
+        // }));
+
+        return this.runOnce(() -> {
+            double heading = 170 * (Math.PI / 180);
+            turretMotor.setPosition(((heading / (2 * Math.PI))) *
+                    Constants.Turret.turretBeltRatio);
+        });
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is
     // straight, + is counter-clockwise)
     public void setShooterHeading(double heading) {
-        final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
+        final MotionMagicVoltage m_request = new MotionMagicVoltage(
+                ((heading / (2 * Math.PI))) * Constants.Turret.turretBeltRatio);
 
-        turretMotor.setControl(
-                m_request.withPosition((Math.PI + (heading / (2 * Math.PI))) * Constants.Turret.turretBeltRatio));
+        turretMotor.setControl(m_request);
     }
 
     public void setShooterSpeed(double speed) {

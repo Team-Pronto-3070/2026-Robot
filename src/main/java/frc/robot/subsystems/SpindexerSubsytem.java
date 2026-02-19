@@ -20,8 +20,13 @@ public class SpindexerSubsytem extends SubsystemBase{
     }
 
     public void spin() {
-        spindexerMotor.set(0.1);
-        indexerMotor.set(0.1);
+        spindexerMotor.set(0.15);
+        indexerMotor.set(0.3);
+    }
+    
+    public void outtake() {
+        spindexerMotor.set(-0.15);
+        indexerMotor.set(-0.3);
     }
 
     public void stop() {

@@ -177,17 +177,22 @@ public class Constants {
 
                 public static final double shooterRatio = 1.2;
 
-                public static final int mainShooterMotorID = 20; // TODO: fix
-                public static final int hoodShooterMotorID = 21; // TODO: fix
-                public static final int turretMotorID = 19; // TODO: fix
+                public static final int mainShooterMotorID = 20;
+                public static final int hoodShooterMotorID = 21;
+                public static final int turretMotorID = 19;
 
                 public static final double turretBeltRatio = 126.0 / 16.0;
 
         }
 
         public static final class Spindexer {
-                public static final int spindexerMotorID = 16; // TODO: fix
-                public static final int indexerMotorID = 17; // TODO: fix
+                public static final int spindexerMotorID = 16;
+                public static final int indexerMotorID = 17;
+        }
+
+        public static final class Intake {
+                public static final int intakeMotorID = 22;
+                public static final int liftingMotorID = 23;
         }
 
         public static final class Autonomous {

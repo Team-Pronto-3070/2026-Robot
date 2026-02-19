@@ -48,7 +48,7 @@ public class CameraSubsystem extends SubsystemBase {
         kMultiTagStdDevs = params.multiTagStdDevs;
 
         poseEstimator = new PhotonPoseEstimator(
-                AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded), cameraTransform);
+                AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark), cameraTransform);
     }
 
     @Override

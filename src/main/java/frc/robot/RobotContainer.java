@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.AutonomousSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SpindexerSubsytem;
 import frc.robot.subsystems.TurretSubsystem;
 
@@ -47,6 +48,7 @@ public class RobotContainer {
         public final CameraSubsystem frontRightCamera = new CameraSubsystem(Constants.Vision.frontRightParams);
         public final CameraSubsystem rightCamera = new CameraSubsystem(Constants.Vision.rightParams);
 
+        public final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
         public final SpindexerSubsytem spindexerSubsytem = new SpindexerSubsytem();
 
         public final TurretSubsystem turretSubsystem = new TurretSubsystem(logger.field);
@@ -110,8 +112,8 @@ public class RobotContainer {
                         });
                 }).ignoringDisable(true));
 
-                turretSubsystem.setDefaultCommand(
-                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                // turretSubsystem.setDefaultCommand(
+                //                 turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
@@ -125,11 +127,22 @@ public class RobotContainer {
                 oi.index.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.spin()));
                 oi.index.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
 
-                // oi.shoot.onTrue(turretSubsystem
-                // .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
-                // Constants.Turret.shooterRatio)));
-                // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
-                // turretSubsystem.setShooterSpeed(0.0)));
+                oi.outtake.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.outtake()));
+                oi.outtake.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
+                
+                // oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
+                // oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
+
+                oi.intake.whileTrue(turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                
+                oi.shoot.onTrue(turretSubsystem
+                .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
+                Constants.Turret.shooterRatio)));
+                oi.shoot.onFalse(turretSubsystem.runOnce(() ->
+                turretSubsystem.setShooterSpeed(0.0)));
+
+                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading().andThen(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(0.0 * Constants.Turret.turretBeltRatio))));
+                // oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading());
 
                 // oi.shoot.onTrue(turretSubsystem
                 // .runOnce(() -> turretSubsystem.setShooterHeading(Math.PI / 2)));

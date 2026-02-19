@@ -22,9 +22,14 @@ public class OI {
     public final DoubleSupplier processed_drive_rot;
 
     public final Trigger shoot;
+
+    public final Trigger intake;
+    public final Trigger outtake;
     public final Trigger index;
 
     public final Trigger trench;
+
+    public final Trigger calibrateShooter;
 
     public OI(){
         driver = new CommandXboxController(Constants.OI.driverPort);
@@ -40,10 +45,15 @@ public class OI {
 
         gyroReset = driver.back();
 
-        index = driver.rightBumper();
         shoot = driver.a();
 
-        trench = driver.rightBumper();
+        intake = driver.rightBumper();
+        outtake = driver.y();
+        index = driver.x();
+
+        trench = driver.leftBumper();
+
+        calibrateShooter = driver.start();
     }
 
 }
