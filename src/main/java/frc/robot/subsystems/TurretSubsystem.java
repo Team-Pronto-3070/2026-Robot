@@ -1,11 +1,8 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
-
-import java.lang.annotation.Target;
-import java.sql.Driver;
-import java.util.List;
+import static edu.wpi.first.units.Units.Radians;
 import java.util.TreeMap;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -33,7 +30,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.RobotContainer;
 
 public class TurretSubsystem extends SubsystemBase {
 
@@ -84,7 +80,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-
+        SmartDashboard.putNumber("Turret Motor Actual (deg)", turretMotor.getPosition().getValue().div(Constants.Turret.turretBeltRatio).in(Degrees));
     }
 
     private double calculateSpeedForDistance(double targetDistance) {
@@ -178,8 +174,13 @@ public class TurretSubsystem extends SubsystemBase {
                 turret,
                 pose.getRotation().plus(new Rotation2d(targetShooterAngle + Math.PI)));
 
-        // targetShooterAngle += Math.PI; // subtract 180˚ so that 0˚ is directly forwards relative to the robot
+        targetShooterAngle += Math.PI; // add 180˚ so that 0˚ is directly forwards relative to the robot
         // targetShooterAngle *= -1;
+
+        // if (targetShooterAngle > Constants.Turret.clockwiseStop) {
+        // targetShooterAngle = Math.copySign(Constants.Turret.maxShooterAngle,
+        // targetShooterAngle);
+        // }
 
         /*
          * Calculate desired shooter speed based on distance to target by interpolating
@@ -193,7 +194,7 @@ public class TurretSubsystem extends SubsystemBase {
         setShooterHeading(targetShooterAngle);
         // setShooterSpeed(targetShooterSpeed);
 
-        SmartDashboard.putNumber("Shooter Target Heading (˚)", targetShooterAngle * 180 / Math.PI);
+        // SmartDashboard.putNumber("Shooter Target Heading (deg)", targetShooterAngle * 180 / Math.PI);
         SmartDashboard.putNumber("Shooter Target Distance (m)", distanceToTarget);
         SmartDashboard.putNumber("Shooter Target Velocity (rpm)", targetShooterSpeed);
 
@@ -227,7 +228,9 @@ public class TurretSubsystem extends SubsystemBase {
         // }));
 
         return this.runOnce(() -> {
-            double heading = 170 * (Math.PI / 180);
+            double heading = Constants.Turret.clockwiseStop.in(Radians);
+
+            // Convert heading in radians into rotations, then get motor rotations
             turretMotor.setPosition(((heading / (2 * Math.PI))) *
                     Constants.Turret.turretBeltRatio);
         });
@@ -236,10 +239,22 @@ public class TurretSubsystem extends SubsystemBase {
     // Set the shooter to a target heading in radians relative to the robot (0rad is
     // straight, + is counter-clockwise)
     public void setShooterHeading(double heading) {
+        if (heading > Math.PI)
+            heading -= 2 * Math.PI;
+        else if (heading < -Math.PI)
+            heading += 2 * Math.PI;
+
+        if (heading > Constants.Turret.clockwiseStop.in(Radians))
+            heading = Constants.Turret.clockwiseStop.in(Radians);
+        else if (heading < -Constants.Turret.counterclockwiseStop.in(Radians))
+            heading = -Constants.Turret.counterclockwiseStop.in(Radians);
+
         final MotionMagicVoltage m_request = new MotionMagicVoltage(
                 ((heading / (2 * Math.PI))) * Constants.Turret.turretBeltRatio);
 
         turretMotor.setControl(m_request);
+
+        SmartDashboard.putNumber("Turret Target (deg)", heading * 180 / Math.PI);
     }
 
     public void setShooterSpeed(double speed) {

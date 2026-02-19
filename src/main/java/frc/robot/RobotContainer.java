@@ -133,7 +133,7 @@ public class RobotContainer {
                 // oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 // oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                oi.intake.whileTrue(turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                oi.intake.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
                 
                 oi.shoot.onTrue(turretSubsystem
                 .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
@@ -141,7 +141,7 @@ public class RobotContainer {
                 oi.shoot.onFalse(turretSubsystem.runOnce(() ->
                 turretSubsystem.setShooterSpeed(0.0)));
 
-                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading().andThen(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(0.0 * Constants.Turret.turretBeltRatio))));
+                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading().andThen(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(0.0))));
                 // oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading());
 
                 // oi.shoot.onTrue(turretSubsystem

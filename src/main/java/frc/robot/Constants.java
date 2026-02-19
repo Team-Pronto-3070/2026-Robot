@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.AutonomousSubsystem.TrenchMethod;
@@ -182,6 +183,9 @@ public class Constants {
                 public static final int turretMotorID = 19;
 
                 public static final double turretBeltRatio = 126.0 / 16.0;
+
+                public static final Angle clockwiseStop = Degrees.of(170);
+                public static final Angle counterclockwiseStop = Degrees.of(160);
 
         }
 
