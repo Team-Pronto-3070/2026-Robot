@@ -1,0 +1,133 @@
+{
+  "name": "Pronto 2026",
+  "isFTC": false,
+  "disableSimplification": true,
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "z",
+      "degrees": 90
+    }
+  ],
+  "position": [
+    0,
+    0,
+    0
+  ],
+  "cameras": [
+    {
+      "name": "Left",
+      "fov": 70,
+      "resolution": [
+        1200,
+        800
+      ],
+      "position": [
+        0.25,
+        0.32,
+        0.52
+      ],
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": -20
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ]
+    },
+    {
+      "name": "Front Left",
+      "fov": 70,
+      "resolution": [
+        1200,
+        800
+      ],
+      "position": [
+        0.3,
+        0.28,
+        0.52
+      ],
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": -20
+        },
+        {
+          "axis": "z",
+          "degrees": 20
+        }
+      ]
+    },
+    {
+      "name": "Front Right",
+      "fov": 70,
+      "resolution": [
+        1200,
+        800
+      ],
+      "position": [
+        0.3,
+        -0.28,
+        0.52
+      ],
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": -20
+        },
+        {
+          "axis": "z",
+          "degrees": -20
+        }
+      ]
+    },
+    {
+      "name": "Right",
+      "fov": 70,
+      "resolution": [
+        1200,
+        800
+      ],
+      "position": [
+        0.25,
+        -0.32,
+        0.52
+      ],
+      "rotations": [
+        {
+          "axis": "y",
+          "degrees": -20
+        },
+        {
+          "axis": "z",
+          "degrees": -90
+        }
+      ]
+    }
+  ],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "z",
+          "degrees": 180
+        }
+      ],
+      "zeroedPosition": [
+        0,
+        0,
+        0.2968
+      ]
+    }
+  ]
+}

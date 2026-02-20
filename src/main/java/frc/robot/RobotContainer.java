@@ -112,8 +112,8 @@ public class RobotContainer {
                         });
                 }).ignoringDisable(true));
 
-                // turretSubsystem.setDefaultCommand(
-                //                 turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                turretSubsystem.setDefaultCommand(
+                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)).ignoringDisable(true));
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
@@ -133,7 +133,7 @@ public class RobotContainer {
                 // oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 // oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                oi.intake.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                // oi.intake.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
                 
                 oi.shoot.onTrue(turretSubsystem
                 .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /

@@ -8,23 +8,31 @@ import java.util.TreeMap;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -38,12 +46,31 @@ public class TurretSubsystem extends SubsystemBase {
 
     private final TalonFX turretMotor = new TalonFX(Constants.Turret.turretMotorID);
 
+    private final TalonFXSimState turretMotorSimState = turretMotor.getSimState();
+
+    // For a simple mechanism (e.g., an arm or elevator)
+    private final DCMotorSim turretMotorSim = new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                    DCMotor.getKrakenX60(1), // motor model
+                    0.001, // moment of inertia (kg·m²) — tune this
+                    1.0 // gear ratio
+            ),
+            DCMotor.getKrakenX60(1));
+
     private Pose2d turretPose = new Pose2d();
 
     private Translation2d lastTurretTranslation = new Translation2d();
     private long lastUpdateTime = 0;
 
     private final Field2d field;
+
+    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
+
+    private final NetworkTable turretStateTable = inst.getTable("TurretState");
+    private final StructPublisher<Pose3d> turretPosePublisher = turretStateTable
+            .getStructTopic("Robot Relative Pose", Pose3d.struct).publish();
+    // private final DoublePublisher turret =
+    // driveStateTable.getDoubleTopic("Timestamp").publish();
 
     public TurretSubsystem(Field2d field) {
         this.field = field;
@@ -65,8 +92,8 @@ public class TurretSubsystem extends SubsystemBase {
 
         // set Motion Magic settings
         var motionMagicConfigs = talonFXConfigs.MotionMagic;
-        motionMagicConfigs.MotionMagicCruiseVelocity = 10; // Target cruise velocity of 80 rps
-        motionMagicConfigs.MotionMagicAcceleration = 5; // Target acceleration of 160 rps/s (0.5 seconds)
+        motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity of 80 rps
+        motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of 160 rps/s (0.5 seconds)
         // motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity
         // of 80 rps
         // motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of
@@ -80,7 +107,32 @@ public class TurretSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Turret Motor Actual (deg)", turretMotor.getPosition().getValue().div(Constants.Turret.turretBeltRatio).in(Degrees));
+        SmartDashboard.putNumber("Turret Motor Actual (deg)",
+                turretMotor.getPosition().getValue().div(Constants.Turret.turretBeltRatio).in(Degrees));
+        turretPosePublisher.set(new Pose3d(
+                new Translation3d(Constants.Turret.turretToRobot.getX(), Constants.Turret.turretToRobot.getY(), 0),
+                new Rotation3d(0, 0,
+                        turretMotorSim.getAngularPositionRad() / Constants.Turret.turretBeltRatio)));
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        // Supply battery voltage to the sim state
+        turretMotorSim.setInputVoltage(RobotController.getBatteryVoltage());
+
+        // Get the motor voltage output and feed it to the physics sim
+        double motorVoltage = turretMotorSimState.getMotorVoltage();
+        turretMotorSim.setInputVoltage(motorVoltage);
+
+        // Step the physics simulation (20ms loop)
+        turretMotorSim.update(0.020);
+
+        // Push simulated position/velocity back to the TalonFX sim state
+        turretMotorSimState.setRawRotorPosition(
+                turretMotorSim.getAngularPositionRotations());
+        turretMotorSimState.setRotorVelocity(
+                turretMotorSim.getAngularVelocityRPM() / 60.0 // convert to rot/s
+        );
     }
 
     private double calculateSpeedForDistance(double targetDistance) {
@@ -194,7 +246,8 @@ public class TurretSubsystem extends SubsystemBase {
         setShooterHeading(targetShooterAngle);
         // setShooterSpeed(targetShooterSpeed);
 
-        // SmartDashboard.putNumber("Shooter Target Heading (deg)", targetShooterAngle * 180 / Math.PI);
+        // SmartDashboard.putNumber("Shooter Target Heading (deg)", targetShooterAngle *
+        // 180 / Math.PI);
         SmartDashboard.putNumber("Shooter Target Distance (m)", distanceToTarget);
         SmartDashboard.putNumber("Shooter Target Velocity (rpm)", targetShooterSpeed);
 
