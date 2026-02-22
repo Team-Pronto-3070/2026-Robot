@@ -59,32 +59,47 @@ public class AutonomousSubsystem extends SubsystemBase {
                 this.field = field;
         }
         
-        public ChassisSpeeds trenchInputAdjust(double inputX, double inputY, double rotationInput){
+        public ChassisSpeeds trenchInputAdjust(double inputX, double inputY, double rotationInput) {
 
-        Translation2d trench = Constants.Autonomous.redTrenchLeft;
+                Translation2d trench = Constants.Autonomous.redTrenchLeft;
 
-        Pose2d pose = drivetrain.getState().Pose;
+                Pose2d pose = drivetrain.getState().Pose;
 
-        double tolerance = 0.10;
-        double maxForce = 1;
+                double tolerance = 0.10;
+                double maxForce = 1;
         
-        double yProximity = 1.1;
+                double yActivation = 1.2;
 
-        double xDistance = Math.abs(pose.getX() - trench.getX());
-        double xProximity = Math.max(0.0, 1.0 - (xDistance / 3));
+                double pauseRatio = 3;
 
-        double force = maxForce * xProximity;
+                double xDistance = Math.abs(pose.getX() - trench.getX());
+                double yDistance = Math.abs(pose.getY() - trench.getY());
+
+                //double xProximity = Math.max(0.0, 1.0 - (xDistance / 3)); //Parameterize the 3 
+                double yProximity = Math.min(1.0, yDistance / yActivation);
+
+                double force = maxForce * yProximity;
         
-        if (trench.getY() + yProximity > pose.getY()){
-                if (pose.getY() + tolerance < trench.getY() && inputX > 0) {
-                        inputY = -inputX * force;
-                } else if (pose.getY() - tolerance > trench.getY() && inputX > 0) {
-                        inputY = inputX * force;
+                //left side trenches
+                if (yDistance < yActivation && pose.getX() > trench.getX()){
+                        if (pose.getY() + tolerance < trench.getY() && inputX > 0) {
+                                inputY = -inputX * force;
+                        } else if (pose.getY() - tolerance > trench.getY() && inputX > 0) {
+                                inputY = inputX * force;
+                        }
+                
+                        if ((xDistance / pauseRatio) < yDistance && yDistance > tolerance && inputX > 0) {
+                                inputX = 0;
+                        }
                 }
-        }
+
+                //right side trenches
+                if (trench.getY() - yProximity < pose.getY()){
+                
+                }
         
 
-        return new ChassisSpeeds(inputX, inputY, rotationInput);
+                return new ChassisSpeeds(inputX, inputY, rotationInput);
         }       
 
         @Override
