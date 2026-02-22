@@ -1,21 +1,5 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
-
 import static edu.wpi.first.units.Units.Centimeters;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
@@ -29,6 +13,19 @@ import com.therekrab.autopilot.APProfile;
 import com.therekrab.autopilot.APTarget;
 import com.therekrab.autopilot.Autopilot;
 import com.therekrab.autopilot.Autopilot.APResult;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class AutonomousSubsystem extends SubsystemBase {
 
@@ -61,6 +58,34 @@ public class AutonomousSubsystem extends SubsystemBase {
                 this.drivetrain = drivetrain;
                 this.field = field;
         }
+        
+        public ChassisSpeeds trenchInputAdjust(double inputX, double inputY, double rotationInput){
+
+        Translation2d trench = Constants.Autonomous.redTrenchLeft;
+
+        Pose2d pose = drivetrain.getState().Pose;
+
+        double tolerance = 0.10;
+        double maxForce = 1;
+        
+        double yProximity = 1.1;
+
+        double xDistance = Math.abs(pose.getX() - trench.getX());
+        double xProximity = Math.max(0.0, 1.0 - (xDistance / 3));
+
+        double force = maxForce * xProximity;
+        
+        if (trench.getY() + yProximity > pose.getY()){
+                if (pose.getY() + tolerance < trench.getY() && inputX > 0) {
+                        inputY = -inputX * force;
+                } else if (pose.getY() - tolerance > trench.getY() && inputX > 0) {
+                        inputY = inputX * force;
+                }
+        }
+        
+
+        return new ChassisSpeeds(inputX, inputY, rotationInput);
+        }       
 
         @Override
         public void periodic() {

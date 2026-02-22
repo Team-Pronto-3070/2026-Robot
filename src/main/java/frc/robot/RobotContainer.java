@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -68,11 +69,13 @@ public class RobotContainer {
                         double driveX = oi.processed_drive_x.getAsDouble() * MaxSpeed;
                         double driveY = oi.processed_drive_y.getAsDouble() * MaxSpeed;
                         double rotationalRate = oi.processed_drive_rot.getAsDouble() * MaxAngularRate;
+                        
+                        ChassisSpeeds adjustedInput = autonomousSubsystem.trenchInputAdjust(driveX, driveY, rotationalRate);
 
                         drivetrain.applyRequest(() -> drive
-                                        .withVelocityX(driveX)
-                                        .withVelocityY(driveY)
-                                        .withRotationalRate(rotationalRate))
+                                        .withVelocityX(adjustedInput.vxMetersPerSecond)
+                                        .withVelocityY(adjustedInput.vyMetersPerSecond)
+                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond))
                                         .execute();
                 }));
 
