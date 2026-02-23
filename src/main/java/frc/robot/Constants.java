@@ -211,6 +211,16 @@ public class Constants {
                 public static final Translation2d redTrenchRight = new Translation2d(
                                 fieldWidth.minus(Inches.of(180)),
                                 fieldHeight.minus(Inches.of(25)));
+                
+                public static final double tolerance = 0.05; //Tolerance for our Y position in the trench
+                public static final double maxForce = 1; //Maximum Y force proportional to drive X 
+                public static final double minForce = 0.25; //Minimum Y force 
+                public static final double yActivationRange = 1.2; //Range from the closest wall 
+                public static final double xActivationRange = 3; //Range from center of trench
+
+                //Ration of X distance to Y distance where we want to stop moving on the X axis, bigger = stop earlier 
+                public static final double pauseRatio = 4; 
+
 
                 /*
                  * What method to use to decide which trench to drive under

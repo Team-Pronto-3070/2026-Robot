@@ -65,38 +65,45 @@ public class AutonomousSubsystem extends SubsystemBase {
 
                 Pose2d pose = drivetrain.getState().Pose;
 
-                double tolerance = 0.10;
-                double maxForce = 1;
-        
-                double yActivation = 1.2;
+                double bumpHalfWidth = 0.4; //exact half of bump is 0.564
 
-                double pauseRatio = 3;
+                if (pose.getMeasureX().lt(Constants.fieldWidth.div(2))) {
+                        if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
+                                trench = Constants.Autonomous.blueTrenchRight;
+                        else
+                                trench = Constants.Autonomous.blueTrenchLeft;
+                } else {
+                        if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
+                                trench = Constants.Autonomous.redTrenchLeft;
+                        else
+                                trench = Constants.Autonomous.redTrenchRight;
+                        }
 
                 double xDistance = Math.abs(pose.getX() - trench.getX());
                 double yDistance = Math.abs(pose.getY() - trench.getY());
 
-                //double xProximity = Math.max(0.0, 1.0 - (xDistance / 3)); //Parameterize the 3 
-                double yProximity = Math.min(1.0, yDistance / yActivation);
+                double yProximity = Math.min(1.0, Math.min(Constants.Autonomous.minForce, yDistance / Constants.Autonomous.yActivationRange));
 
-                double force = maxForce * yProximity;
-        
-                //left side trenches
-                if (yDistance < yActivation && pose.getX() > trench.getX()){
-                        if (pose.getY() + tolerance < trench.getY() && inputX > 0) {
+                double approachDir = Math.signum(trench.getX() - pose.getX());
+                boolean movingTowardBlue = Math.signum(inputX) == approachDir;
+                
+                if (yDistance < Constants.Autonomous.yActivationRange && xDistance < Constants.Autonomous.xActivationRange && pose.getX() > trench.getX() + bumpHalfWidth){
+                        boolean pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && inputX > 0;
+
+                        double force = pauseX ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * yProximity;
+                        
+                        if (pose.getY() + Constants.Autonomous.tolerance < trench.getY() && inputX > 0) {
                                 inputY = -inputX * force;
-                        } else if (pose.getY() - tolerance > trench.getY() && inputX > 0) {
+                        } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY() && inputX > 0) {
                                 inputY = inputX * force;
                         }
                 
-                        if ((xDistance / pauseRatio) < yDistance && yDistance > tolerance && inputX > 0) {
+                        if (pauseX) {
                                 inputX = 0;
                         }
                 }
 
-                //right side trenches
-                if (trench.getY() - yProximity < pose.getY()){
                 
-                }
         
 
                 return new ChassisSpeeds(inputX, inputY, rotationInput);
