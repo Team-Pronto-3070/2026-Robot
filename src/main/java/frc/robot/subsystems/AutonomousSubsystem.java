@@ -8,11 +8,11 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
-import com.therekrab.autopilot.APConstraints;
-import com.therekrab.autopilot.APProfile;
-import com.therekrab.autopilot.APTarget;
-import com.therekrab.autopilot.Autopilot;
-import com.therekrab.autopilot.Autopilot.APResult;
+//import com.therekrab.autopilot.APConstraints;
+//import com.therekrab.autopilot.APProfile;
+//import com.therekrab.autopilot.APTarget;
+//import com.therekrab.autopilot.Autopilot;
+//import com.therekrab.autopilot.Autopilot.APResult;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -36,7 +36,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                         .withDriveRequestType(DriveRequestType.Velocity)
                         .withHeadingPID(5, 0, 0); /* tune this for your robot! */
 
-        private static final APConstraints kConstraints = new APConstraints()
+        /*private static final APConstraints kConstraints = new APConstraints()
                         .withAcceleration(15.0)
                         .withJerk(8.0);
 
@@ -48,7 +48,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         public static final Autopilot kAutopilot = new Autopilot(kProfile);
 
         private APTarget target = new APTarget(new Pose2d(new Translation2d(), new Rotation2d()))
-                        .withEntryAngle(Rotation2d.kZero);
+                        .withEntryAngle(Rotation2d.kZero);*/
 
         private final Field2d field;
 
@@ -82,29 +82,44 @@ public class AutonomousSubsystem extends SubsystemBase {
                 double xDistance = Math.abs(pose.getX() - trench.getX());
                 double yDistance = Math.abs(pose.getY() - trench.getY());
 
-                double yProximity = Math.min(1.0, Math.min(Constants.Autonomous.minForce, yDistance / Constants.Autonomous.yActivationRange));
-
-                double approachDir = Math.signum(trench.getX() - pose.getX());
-                boolean movingTowardBlue = Math.signum(inputX) == approachDir;
+                double yProximity = Math.min(1.0, Math.max(Constants.Autonomous.minForce, yDistance / Constants.Autonomous.yActivationRange));
                 
-                if (yDistance < Constants.Autonomous.yActivationRange && xDistance < Constants.Autonomous.xActivationRange && pose.getX() > trench.getX() + bumpHalfWidth){
-                        boolean pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && inputX > 0;
+                
+                if (yDistance < Constants.Autonomous.yActivationRange && xDistance < Constants.Autonomous.xActivationRange){
 
-                        double force = pauseX ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * yProximity;
+                        boolean pauseX = false;
+
+                        //Blue side facing trenches 
+                        if (pose.getX() > trench.getX() + bumpHalfWidth){
+                                pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && inputX > 0;
+                                double force = pauseX ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * yProximity;
+
+                                if (pose.getY() + Constants.Autonomous.tolerance < trench.getY() && inputX > 0) {
+                                        //inputY = -inputX * force;
+                                        inputY = (((1 - force) * inputY) - (force * inputX)); //mix of correction and driver input
+                                } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY() && inputX > 0) {
+                                        //inputY = inputX * force;
+                                        inputY = ((1 - force) * inputY) + (force * inputX); 
+                                }
                         
-                        if (pose.getY() + Constants.Autonomous.tolerance < trench.getY() && inputX > 0) {
-                                inputY = -inputX * force;
-                        } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY() && inputX > 0) {
-                                inputY = inputX * force;
+                        //Red side facing trenches 
+                        } else if (trench.getX() + bumpHalfWidth > pose.getX()){
+                                pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && inputX < 0;
+                                double force = pauseX ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * yProximity;
+                                
+                                if (pose.getY() + Constants.Autonomous.tolerance < trench.getY() && inputX < 0) {
+                                        //inputY = inputX * force;
+                                        inputY = ((1 - force) * inputY) + (force * inputX); 
+                                } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY() && inputX < 0) {
+                                        //inputY = -inputX * force;
+                                        inputY = (((1 - force) * inputY) - (force * inputX));
+                                }
                         }
-                
+
                         if (pauseX) {
                                 inputX = 0;
                         }
                 }
-
-                
-        
 
                 return new ChassisSpeeds(inputX, inputY, rotationInput);
         }       
@@ -259,13 +274,13 @@ public class AutonomousSubsystem extends SubsystemBase {
                                         break;
                         }
 
-                        target = new APTarget(new Pose2d(trench,
+                        /*target = new APTarget(new Pose2d(trench,
                                         new Rotation2d(Math.round(pose.getRotation().getRadians() / (Math.PI))
                                                         * (Math.PI))))
                                         .withEntryAngle(pose.getX() > trench.getX()
                                                         ? Rotation2d.k180deg
                                                         : Rotation2d.kZero)
-                                        .withVelocity(5.0);
+                                        .withVelocity(5.0); */
                 }
         }
 
@@ -280,14 +295,14 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         public Command trench() {
                 return drivetrain.run(() -> {
-                        selfDriving = true;
+                        /*selfDriving = true;
 
                         ChassisSpeeds robotRelativeSpeeds = drivetrain.getState().Speeds;
                         Pose2d pose = drivetrain.getState().Pose;
 
                         APResult output = kAutopilot.calculate(pose, robotRelativeSpeeds, target);
 
-                        /* these speeds are field relative */
+                        /* these speeds are field relative */ /* 
                         LinearVelocity veloX = output.vx();
                         LinearVelocity veloY = output.vy();
                         Rotation2d headingReference = output.targetAngle();
@@ -299,7 +314,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                 })
                                 .until(() -> kAutopilot.atTarget(drivetrain.getState().Pose, target))
                                 .finallyDo(() -> {
-                                        selfDriving = false;
+                                        selfDriving = false; */
                                 });
         }
 
