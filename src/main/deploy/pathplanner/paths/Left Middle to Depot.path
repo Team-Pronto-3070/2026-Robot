@@ -1,0 +1,88 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 7.585472777630651,
+        "y": 6.1154846950035315
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 7.580150236140536,
+        "y": 7.480813360699154
+      },
+      "isLocked": false,
+      "linkedName": "Left Intake"
+    },
+    {
+      "anchor": {
+        "x": 4.633107399805791,
+        "y": 7.427249238612288
+      },
+      "prevControl": {
+        "x": 5.949341379867354,
+        "y": 7.427249238612288
+      },
+      "nextControl": {
+        "x": 3.6165486990668105,
+        "y": 7.427249238612288
+      },
+      "isLocked": false,
+      "linkedName": "Left Trench"
+    },
+    {
+      "anchor": {
+        "x": 0.6771526306497175,
+        "y": 6.1154846950035315
+      },
+      "prevControl": {
+        "x": 0.6682010835981639,
+        "y": 7.492377791754944
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.7,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Shooter Start",
+      "waypointRelativePos": 1.3026244588744587,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "Intake",
+      "waypointRelativePos": 1.6615090638528125,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 53.644785602848515
+  },
+  "reversed": false,
+  "folder": null,
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 90.0
+  },
+  "useDefaultConstraints": true
+}

@@ -1,0 +1,82 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 7.5845534295550845,
+        "y": 2.5635592116878536
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 7.54695693193856,
+        "y": 0.41634920109463147
+      },
+      "isLocked": false,
+      "linkedName": "Right Intake"
+    },
+    {
+      "anchor": {
+        "x": 4.619172018449859,
+        "y": 0.6535893913312145
+      },
+      "prevControl": {
+        "x": 5.549525294592634,
+        "y": 0.655272166546286
+      },
+      "nextControl": {
+        "x": 3.602614980579096,
+        "y": 0.6517506951800841
+      },
+      "isLocked": false,
+      "linkedName": "Right Trench"
+    },
+    {
+      "anchor": {
+        "x": 0.6476851054908193,
+        "y": 0.6535893913312145
+      },
+      "prevControl": {
+        "x": 1.6572268173470428,
+        "y": 0.6535893913312146
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "Outpost"
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.7,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Shooter Start",
+      "waypointRelativePos": 1.3026244588744587,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "reversed": false,
+  "folder": null,
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": true
+}
