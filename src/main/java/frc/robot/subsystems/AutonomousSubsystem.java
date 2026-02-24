@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Centimeters;
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
@@ -14,12 +12,11 @@ import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 //import com.therekrab.autopilot.Autopilot;
 //import com.therekrab.autopilot.Autopilot.APResult;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -65,7 +62,7 @@ public class AutonomousSubsystem extends SubsystemBase {
 
                 Pose2d pose = drivetrain.getState().Pose;
 
-                double bumpHalfWidth = 0.4; //exact half of bump is 0.564
+                double bumpHalfWidth = 0.5; //exact half of bump is 0.564
 
                 if (pose.getMeasureX().lt(Constants.fieldWidth.div(2))) {
                         if (pose.getTranslation().getY() < Constants.fieldHeight.in(Meters) / 2)
@@ -82,43 +79,48 @@ public class AutonomousSubsystem extends SubsystemBase {
                 double xDistance = Math.abs(pose.getX() - trench.getX());
                 double yDistance = Math.abs(pose.getY() - trench.getY());
 
-                double yProximity = Math.min(1.0, Math.max(Constants.Autonomous.minForce, yDistance / Constants.Autonomous.yActivationRange));
-                
+                double yProximity = Math.min(1.0, Math.max(Constants.Autonomous.minForce, (yDistance - bumpHalfWidth) / Constants.Autonomous.yActivationRange));
                 
                 if (yDistance < Constants.Autonomous.yActivationRange && xDistance < Constants.Autonomous.xActivationRange){
 
                         boolean pauseX = false;
 
                         //Blue side facing trenches 
-                        if (pose.getX() > trench.getX() + bumpHalfWidth){
-                                pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && inputX > 0;
-                                double force = pauseX ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * yProximity;
+                        if (pose.getX() > trench.getX() - bumpHalfWidth && inputX > 0){
 
-                                if (pose.getY() + Constants.Autonomous.tolerance < trench.getY() && inputX > 0) {
-                                        //inputY = -inputX * force;
-                                        inputY = (((1 - force) * inputY) - (force * inputX)); //mix of correction and driver input
-                                } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY() && inputX > 0) {
-                                        //inputY = inputX * force;
-                                        inputY = ((1 - force) * inputY) + (force * inputX); 
+                                pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && xDistance > bumpHalfWidth && inputX > 0 && xDistance < 1.75;
+
+                                double force = pauseX && Math.abs(inputY) < 0.1 ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * (1 - Math.pow(1 - yProximity,  Constants.Autonomous.alignmentExponent));
+
+                                //System.out.printf("inputY: %.2f, inputX: %.2f, force: %.3f%n", inputY, inputX, force);
+                                if (pose.getY() + Constants.Autonomous.tolerance < trench.getY()) {
+                                        inputY += -inputX * force;
+                                } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY()) {
+                                        inputY += inputX * force;
                                 }
+
                         
                         //Red side facing trenches 
-                        } else if (trench.getX() + bumpHalfWidth > pose.getX()){
-                                pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && inputX < 0;
-                                double force = pauseX ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * yProximity;
-                                
-                                if (pose.getY() + Constants.Autonomous.tolerance < trench.getY() && inputX < 0) {
-                                        //inputY = inputX * force;
-                                        inputY = ((1 - force) * inputY) + (force * inputX); 
-                                } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY() && inputX < 0) {
-                                        //inputY = -inputX * force;
-                                        inputY = (((1 - force) * inputY) - (force * inputX));
+                        } else if (trench.getX() + bumpHalfWidth > pose.getX() && inputX < 0){
+
+                                pauseX = (xDistance / Constants.Autonomous.pauseRatio) < yDistance && yDistance > Constants.Autonomous.tolerance && xDistance > bumpHalfWidth && inputX < 0 && xDistance < 1.75;
+
+                                double force = pauseX && Math.abs(inputY) < 0.1 ? Constants.Autonomous.maxForce : Constants.Autonomous.maxForce * (1 - Math.pow(1 - yProximity, Constants.Autonomous.alignmentExponent));
+
+                                if (pose.getY() + Constants.Autonomous.tolerance < trench.getY()) {
+                                        inputY += inputX * force;
+                                } else if (pose.getY() - Constants.Autonomous.tolerance > trench.getY()) {
+                                        inputY += -inputX * force;
+
                                 }
                         }
 
                         if (pauseX) {
                                 inputX = 0;
                         }
+
+                        inputY = MathUtil.clamp(inputY, -1.0, 1.0);
+
                 }
 
                 return new ChassisSpeeds(inputX, inputY, rotationInput);

@@ -66,16 +66,16 @@ public class RobotContainer {
 
         private void configureBindings() {
                 drivetrain.setDefaultCommand(drivetrain.run(() -> {
-                        double driveX = oi.processed_drive_x.getAsDouble() * MaxSpeed;
-                        double driveY = oi.processed_drive_y.getAsDouble() * MaxSpeed;
-                        double rotationalRate = oi.processed_drive_rot.getAsDouble() * MaxAngularRate;
+                        double driveX = oi.processed_drive_x.getAsDouble();
+                        double driveY = oi.processed_drive_y.getAsDouble();
+                        double rotationalRate = oi.processed_drive_rot.getAsDouble();
                         
                         ChassisSpeeds adjustedInput = autonomousSubsystem.trenchInputAdjust(driveX, driveY, rotationalRate);
 
                         drivetrain.applyRequest(() -> drive
-                                        .withVelocityX(adjustedInput.vxMetersPerSecond)
-                                        .withVelocityY(adjustedInput.vyMetersPerSecond)
-                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond))
+                                        .withVelocityX(adjustedInput.vxMetersPerSecond  * MaxSpeed)
+                                        .withVelocityY(adjustedInput.vyMetersPerSecond  * MaxSpeed)
+                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond  * MaxAngularRate))
                                         .execute();
                 }));
 
