@@ -48,13 +48,27 @@ public class Constants {
 
                 // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
+                private static final Distance groundDistance = Inches.of(20.5); // distance off ground
+
+                // distance between two front cameras
+                private static final Distance frontWidth = Inches.of(21 + (11 / 16));
+
+                // distance from center to front cameras
+                private static final Distance frontDistance = Inches.of((33.5 / 2) - (3 + (7 / 8)) - (6 / 8));
+
+                // distance between two side cameras
+                private static final Distance sideWidth = Inches.of(25 + (5 / 16));
+
+                // distance from center to side cameras
+                private static final Distance sideDistance = Inches.of((33.5 / 2) - (3 + (7 / 8)) - (3 + (6 / 16)));
+
                 public static final CameraParams leftParams = new CameraParams(
                                 "Left",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of(9.753),
-                                                                Inches.of(12.6),
-                                                                Inches.of(20.5)),
+                                                                sideDistance,
+                                                                sideWidth.div(2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(90))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -66,9 +80,9 @@ public class Constants {
                                 "Front Left",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of((26.5 / 2) - 1.25),
-                                                                Inches.of(21.724 / 2),
-                                                                Inches.of(20.5)),
+                                                                frontDistance,
+                                                                frontWidth.div(2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(20))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -80,9 +94,9 @@ public class Constants {
                                 "Front Right",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of((26.5 / 2) + 1.25),
-                                                                Inches.of(-21.724 / 2),
-                                                                Inches.of(20.5)),
+                                                                frontDistance,
+                                                                frontWidth.div(-2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-20))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -94,9 +108,9 @@ public class Constants {
                                 "Right",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of(9.753),
-                                                                Inches.of(-12.6),
-                                                                Inches.of(20.5)),
+                                                                sideDistance,
+                                                                sideWidth.div(-2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-90))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -176,7 +190,7 @@ public class Constants {
                  */
                 public static final double shootOnTheMoveScale = 0.1;
 
-                public static final double shooterRatio = 1.2;
+                public static final double shooterRatio = 0.8;
 
                 public static final int mainShooterMotorID = 20;
                 public static final int hoodShooterMotorID = 21;
@@ -184,7 +198,7 @@ public class Constants {
 
                 public static final double turretBeltRatio = 126.0 / 16.0;
 
-                public static final Angle clockwiseStop = Degrees.of(170);
+                public static final Angle clockwiseStop = Degrees.of(165);
                 public static final Angle counterclockwiseStop = Degrees.of(160);
 
         }

@@ -92,8 +92,8 @@ public class TurretSubsystem extends SubsystemBase {
 
         // set Motion Magic settings
         var motionMagicConfigs = talonFXConfigs.MotionMagic;
-        motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity of 80 rps
-        motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of 160 rps/s (0.5 seconds)
+        motionMagicConfigs.MotionMagicCruiseVelocity = 8; // Target cruise velocity of 80 rps
+        motionMagicConfigs.MotionMagicAcceleration = 16; // Target acceleration of 160 rps/s (0.5 seconds)
         // motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity
         // of 80 rps
         // motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of

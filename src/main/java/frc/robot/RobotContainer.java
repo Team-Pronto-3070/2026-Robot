@@ -80,8 +80,8 @@ public class RobotContainer {
                         leftCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                leftCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                                // leftCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
@@ -89,8 +89,8 @@ public class RobotContainer {
                         frontLeftCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                frontLeftCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                                // frontLeftCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
@@ -98,8 +98,8 @@ public class RobotContainer {
                         frontRightCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                frontRightCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                                // frontRightCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
@@ -107,13 +107,13 @@ public class RobotContainer {
                         rightCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                rightCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                                // rightCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
-                turretSubsystem.setDefaultCommand(
-                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)).ignoringDisable(true));
+                // turretSubsystem.setDefaultCommand(
+                //                 turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)).ignoringDisable(true));
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
@@ -130,13 +130,13 @@ public class RobotContainer {
                 oi.outtake.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.outtake()));
                 oi.outtake.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
                 
-                // oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
-                // oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
+                oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
+                oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                // oi.intake.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
+                oi.trench.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
                 
                 oi.shoot.onTrue(turretSubsystem
-                .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
+                .runOnce(() -> turretSubsystem.setShooterSpeed(8.0 /
                 Constants.Turret.shooterRatio)));
                 oi.shoot.onFalse(turretSubsystem.runOnce(() ->
                 turretSubsystem.setShooterSpeed(0.0)));
@@ -149,7 +149,7 @@ public class RobotContainer {
                 // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
                 // turretSubsystem.setShooterHeading(Math.PI)));
 
-                oi.trench.whileTrue(autonomousSubsystem.trench());
+                // oi.trench.whileTrue(autonomousSubsystem.trench());
 
                 drivetrain.registerTelemetry(logger::telemeterize);
         }
