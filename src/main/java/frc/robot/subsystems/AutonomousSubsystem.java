@@ -12,6 +12,8 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -21,9 +23,19 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.therekrab.autopilot.APConstraints;
 import com.therekrab.autopilot.APProfile;
 import com.therekrab.autopilot.APTarget;
@@ -33,6 +45,8 @@ import com.therekrab.autopilot.Autopilot.APResult;
 public class AutonomousSubsystem extends SubsystemBase {
 
         private final CommandSwerveDrivetrain drivetrain;
+
+        private SwerveRequest.ApplyRobotSpeeds drive = new SwerveRequest.ApplyRobotSpeeds();
 
         private final SwerveRequest.FieldCentricFacingAngle request = new SwerveRequest.FieldCentricFacingAngle()
                         .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
@@ -53,6 +67,8 @@ public class AutonomousSubsystem extends SubsystemBase {
         private APTarget target = new APTarget(new Pose2d(new Translation2d(), new Rotation2d()))
                         .withEntryAngle(Rotation2d.kZero);
 
+        private final SendableChooser<Command> autoChooser;
+
         private final Field2d field;
 
         private boolean selfDriving = false;
@@ -60,10 +76,111 @@ public class AutonomousSubsystem extends SubsystemBase {
         public AutonomousSubsystem(CommandSwerveDrivetrain drivetrain, Field2d field) {
                 this.drivetrain = drivetrain;
                 this.field = field;
+
+                // Load the RobotConfig from the GUI settings. You should probably
+                // store this in your Constants file
+                RobotConfig config = null;
+                try {
+                        config = RobotConfig.fromGUISettings();
+                } catch (Exception e) {
+                        // Handle exception as needed
+                        e.printStackTrace();
+                }
+
+                // Configure AutoBuilder last
+                AutoBuilder.configure(
+                                () -> drivetrain.getState().Pose, // Robot pose supplier
+                                (newPose) -> drivetrain.resetPose(newPose), // Method to reset odometry (will be called
+                                                                            // if your
+                                // auto has a starting pose)
+                                () -> drivetrain.getKinematics().toChassisSpeeds(drivetrain.getState().ModuleStates), // ChassisSpeeds
+                                // supplier.
+                                // MUST BE ROBOT
+                                // RELATIVE
+                                (speeds, feedforwards) -> drivetrain.setControl(drive.withSpeeds(speeds)), // Method
+                                                                                                           // that will
+                                // drive the robot given
+                                // ROBOT
+                                // RELATIVE ChassisSpeeds. Also optionally outputs
+                                // individual module feedforwards
+                                new PPHolonomicDriveController( // PPHolonomicController is the built in path following
+                                                                // controller for
+                                                                // holonomic drive trains
+                                                new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+                                                new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
+                                ),
+                                config, // The robot configuration
+                                () -> {
+                                        // Boolean supplier that controls when the path will be mirrored for the red
+                                        // alliance
+                                        // This will flip the path being followed to the red side of the field.
+                                        // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+
+                                        var alliance = DriverStation.getAlliance();
+                                        if (alliance.isPresent()) {
+                                                return alliance.get() == DriverStation.Alliance.Red;
+                                        }
+                                        return false;
+                                },
+                                this // Reference to this subsystem to set requirements
+                );
+
+                // Build an auto chooser. This will use Commands.none() as the default option.
+                autoChooser = AutoBuilder.buildAutoChooser();
+
+                SmartDashboard.putData("Auto Chooser", autoChooser);
         }
+
+        private String autoName, newAutoName;
+        private boolean redAlliance = false, lastAlliance = false;
+        private List<Pose2d> poses = new ArrayList<Pose2d>();
 
         @Override
         public void periodic() {
+
+                var optional = DriverStation.getAlliance();
+                if (optional.isPresent()) {
+                        if (optional.get() == Alliance.Red) {
+                                redAlliance = true;
+                        } else {
+                                redAlliance = false;
+                        }
+                }
+
+                newAutoName = autoChooser.getSelected().getName();
+                if (autoName != newAutoName || lastAlliance != redAlliance) {
+                        autoName = newAutoName;
+                        if (AutoBuilder.getAllAutoNames().contains(autoName)) {
+                                // System.out.println("Displaying " + autoName);
+                                try {
+                                        List<PathPlannerPath> pathPlannerPaths = PathPlannerAuto
+                                                        .getPathGroupFromAutoFile(autoName);
+                                        poses.clear();
+                                        // ** Rotate Path on red side **//
+                                        for (PathPlannerPath path : pathPlannerPaths) {
+                                                poses.addAll(path.getAllPathPoints().stream().map(
+                                                                point -> redAlliance
+                                                                                ? new Pose2d(Constants.fieldWidth.minus(
+                                                                                                point.position.getMeasureX()),
+                                                                                                Constants.fieldHeight
+                                                                                                                .minus(point.position
+                                                                                                                                .getMeasureY()),
+                                                                                                new Rotation2d())
+                                                                                : new Pose2d(point.position.getX(),
+                                                                                                point.position.getY(),
+                                                                                                new Rotation2d()))
+                                                                .collect(Collectors.toList()));
+                                        }
+                                        
+                                        field.getObject("Auto Path").setPoses(poses);
+                                } catch (Exception e) {
+                                        System.out.println("Auto Display Exception: " + e);
+                                }
+                        }
+                }
+
+                lastAlliance = redAlliance;
+
                 // Do not update target while moving towards it
                 if (!selfDriving) {
                         Pose2d pose = drivetrain.getState().Pose;
@@ -113,7 +230,9 @@ public class AutonomousSubsystem extends SubsystemBase {
                                         break;
 
                                 case VELOCITY:
-                                        ChassisSpeeds speeds = ChassisSpeeds.fromRobotRelativeSpeeds(drivetrain.getState().Speeds, drivetrain.getState().Pose.getRotation());
+                                        ChassisSpeeds speeds = ChassisSpeeds.fromRobotRelativeSpeeds(
+                                                        drivetrain.getState().Speeds,
+                                                        drivetrain.getState().Pose.getRotation());
 
                                         double vx = speeds.vxMetersPerSecond;
                                         double vy = speeds.vyMetersPerSecond;
@@ -153,25 +272,25 @@ public class AutonomousSubsystem extends SubsystemBase {
                                                 boolean topHalf = false;
                                                 boolean leftHalf = false;
 
-                                                
                                                 if (vx > db)
                                                         movingRight = true;
                                                 else if (vx < -db)
                                                         movingLeft = true;
-                                                
+
                                                 if (vy > db)
                                                         movingUp = true;
                                                 else if (vy < -db)
                                                         movingDown = true;
-                                                
+
                                                 if (pose.getMeasureX().lt(Constants.fieldWidth.div(2)))
                                                         leftHalf = true;
-                                                
+
                                                 if (pose.getMeasureY().gt(Constants.fieldHeight.div(2)))
                                                         topHalf = true;
 
                                                 // System.out.println("vx: " + vx + ", vy: " + vy);
-                                                // System.out.println("Moving Up: " + movingUp + ", Moving Down: " + movingDown);
+                                                // System.out.println("Moving Up: " + movingUp + ", Moving Down: " +
+                                                // movingDown);
 
                                                 if (movingUp & movingLeft)
                                                         trench = Constants.Autonomous.blueTrenchLeft;
@@ -199,7 +318,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                                                         trench = Constants.Autonomous.redTrenchRight;
                                                 else if (movingDown & !leftHalf)
                                                         trench = Constants.Autonomous.redTrenchLeft;
-                                                
+
                                                 else if (topHalf & leftHalf)
                                                         trench = Constants.Autonomous.blueTrenchLeft;
                                                 else if (!topHalf & leftHalf)
@@ -222,9 +341,8 @@ public class AutonomousSubsystem extends SubsystemBase {
                 }
         }
 
-        @Override
-        public void simulationPeriodic() {
-
+        public Command getAutonomousCommand() {
+                return autoChooser.getSelected();
         }
 
         public boolean isSelfDriving() {

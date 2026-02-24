@@ -113,7 +113,8 @@ public class RobotContainer {
                 }).ignoringDisable(true));
 
                 turretSubsystem.setDefaultCommand(
-                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose)).ignoringDisable(true));
+                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose))
+                                                .ignoringDisable(true));
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
@@ -129,19 +130,20 @@ public class RobotContainer {
 
                 oi.outtake.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.outtake()));
                 oi.outtake.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
-                
+
                 // oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 // oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                // oi.intake.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
-                
-                oi.shoot.onTrue(turretSubsystem
-                .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
-                Constants.Turret.shooterRatio)));
-                oi.shoot.onFalse(turretSubsystem.runOnce(() ->
-                turretSubsystem.setShooterSpeed(0.0)));
+                // oi.intake.whileTrue(turretSubsystem.run(() ->
+                // turretSubsystem.update(drivetrain.getState().Pose)));
 
-                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading().andThen(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(0.0))));
+                oi.shoot.onTrue(turretSubsystem
+                                .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
+                                                Constants.Turret.shooterRatio)));
+                oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterSpeed(0.0)));
+
+                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading()
+                                .andThen(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(0.0))));
                 // oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading());
 
                 // oi.shoot.onTrue(turretSubsystem
@@ -155,18 +157,6 @@ public class RobotContainer {
         }
 
         public Command getAutonomousCommand() {
-                // Simple drive forward auton
-                final var idle = new SwerveRequest.Idle();
-                return Commands.sequence(
-                                // Reset our field centric heading to match the robot
-                                // facing away from our alliance station wall (0 deg).
-                                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                                // Then slowly drive forward (away from us) for 5 seconds.
-                                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
-                                                .withVelocityY(0)
-                                                .withRotationalRate(0))
-                                                .withTimeout(5.0),
-                                // Finally idle for the rest of auton
-                                drivetrain.applyRequest(() -> idle));
+                return autonomousSubsystem.getAutonomousCommand();
         }
 }
