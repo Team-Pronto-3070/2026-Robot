@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.AutonomousSubsystem.TrenchMethod;
@@ -174,11 +176,15 @@ public class Constants {
                 // Look up table of Shooter speeds and hub distances. Format is (Distance,
                 // Shooter speed)
                 public static final Map<Double, Double> speedTable = Map.of(
-                                0.0, 0.0,
-                                1.0, 1000.0,
-                                2.0, 2000.0,
-                                3.0, 3000.0,
-                                6.0, 6000.0); // TODO: Test
+                                1.83, 0.47,
+                                2.6, 0.47,
+                                3.1, 0.50,
+                                3.6, 0.55,
+                                4.12, 0.60,
+                                4.52, 0.65,
+                                5.1, 0.68,
+                                5.52, 0.71,
+                                6.05, 0.75); // TODO: Test
 
                 public static final TreeMap<Double, Double> speedTreeMap = new TreeMap<>(speedTable);
 
@@ -188,18 +194,21 @@ public class Constants {
                  * off of the time it will take for the projectile to reach the target, but we
                  * will use a constant for now and change later if it is not good enough.
                  */
-                public static final double shootOnTheMoveScale = 0.1;
+                public static final double shootOnTheMoveScale = 0.0;
 
-                public static final double shooterRatio = 0.8;
+                // greater than one is forward spin
+                public static final double shooterRatio = 0.9;
 
                 public static final int mainShooterMotorID = 20;
                 public static final int hoodShooterMotorID = 21;
                 public static final int turretMotorID = 19;
 
-                public static final double turretBeltRatio = 126.0 / 16.0;
+                public static final double turretBeltRatio = 126.0 / 18.0;
 
-                public static final Angle clockwiseStop = Degrees.of(165);
-                public static final Angle counterclockwiseStop = Degrees.of(160);
+                public static final Angle clockwiseStop = Degrees.of(160);
+                public static final Angle counterclockwiseStop = Degrees.of(182);
+
+                public static final Current hardStopCurrent = Amps.of(26.0);
 
         }
 

@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
@@ -244,7 +245,7 @@ public class TurretSubsystem extends SubsystemBase {
         double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
 
         setShooterHeading(targetShooterAngle);
-        // setShooterSpeed(targetShooterSpeed);
+        setShooterSpeed(targetShooterSpeed);
 
         // SmartDashboard.putNumber("Shooter Target Heading (deg)", targetShooterAngle *
         // 180 / Math.PI);
@@ -266,27 +267,27 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public Command calibrateHeading() {
-        // return this.run(() -> {
-        // turretMotor.stopMotor();
-        // turretMotor.set(0.05);
-        // // System.out.println("Calibrating Turret");
-        // }).until(() -> turretMotor.getTorqueCurrent().getValueAsDouble() > 22.0)
-        // .andThen(this.runOnce(() -> {
-        // // System.out.println("Turret Current Limit Reached");
-        // turretMotor.stopMotor();
-        // double heading = 170 * (Math.PI / 180);
-        // // turretMotor.setPosition(((heading / (2 * Math.PI))) *
+        return this.run(() -> {
+            turretMotor.stopMotor();
+            turretMotor.set(0.05);
+            // System.out.println("Calibrating Turret");
+        }).until(() -> turretMotor.getTorqueCurrent().getValueAsDouble() > Constants.Turret.hardStopCurrent.in(Amps))
+                .andThen(this.runOnce(() -> {
+                    // System.out.println("Turret Current Limit Reached");
+                    turretMotor.stopMotor();
+                    double heading = Constants.Turret.counterclockwiseStop.in(Radians);
+                    turretMotor.setPosition(((heading / (2 * Math.PI))) *
+                            Constants.Turret.turretBeltRatio);
+                    // turretMotor.setPosition(0 * Constants.Turret.turretBeltRatio);
+                }));
+
+        // return this.runOnce(() -> {
+        // double heading = Constants.Turret.clockwiseStop.in(Radians);
+
+        // // Convert heading in radians into rotations, then get motor rotations
+        // turretMotor.setPosition(((heading / (2 * Math.PI))) *
         // Constants.Turret.turretBeltRatio);
-        // turretMotor.setPosition(0 * Constants.Turret.turretBeltRatio);
-        // }));
-
-        return this.runOnce(() -> {
-            double heading = Constants.Turret.clockwiseStop.in(Radians);
-
-            // Convert heading in radians into rotations, then get motor rotations
-            turretMotor.setPosition(((heading / (2 * Math.PI))) *
-                    Constants.Turret.turretBeltRatio);
-        });
+        // });
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is
@@ -311,6 +312,7 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void setShooterSpeed(double speed) {
+        speed /= Constants.Turret.shooterRatio;
         mainShooterMotor.set(-speed);
         hoodShooterMotor.set(-speed * Constants.Turret.shooterRatio);
     }
