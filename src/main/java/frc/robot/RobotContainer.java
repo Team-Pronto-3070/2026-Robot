@@ -61,6 +61,8 @@ public class RobotContainer {
 
                 SmartDashboard.putData("Field", logger.field);
 
+                SmartDashboard.putBoolean("On Field", false);
+
                 configureBindings();
         }
 
@@ -113,9 +115,9 @@ public class RobotContainer {
                         });
                 }).ignoringDisable(true));
 
-                // turretSubsystem.setDefaultCommand(
-                // turretSubsystem.runOnce(() ->
-                // turretSubsystem.update(drivetrain.getState().Pose)).ignoringDisable(true));
+                turretSubsystem.setDefaultCommand(
+                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose))
+                                                .ignoringDisable(true));
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
@@ -126,36 +128,27 @@ public class RobotContainer {
                 // Reset the field-centric heading on left bumper press.
                 oi.gyroReset.onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-                oi.index.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.spin()));
-                oi.index.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
-
                 oi.outtake.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.outtake()));
                 oi.outtake.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
 
                 oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                oi.trench.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
-                oi.trench.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.stopShooter()));
-
                 SmartDashboard.putNumber("ShooterCalibrateSpeed", 1.0);
 
-                oi.shoot.onTrue(turretSubsystem
-                                .runOnce(() -> turretSubsystem.setShooterSpeed(
-                                                SmartDashboard.getNumber("ShooterCalibrateSpeed", 1.0))));
+                oi.shoot.onTrue(turretSubsystem.runOnce(() -> {
+                        turretSubsystem.startShooter();
+                        intakeSubsystem.intake();
+                }));
+                oi.shoot.onFalse(turretSubsystem.runOnce(() -> {
+                        turretSubsystem.stopShooter();
+                        intakeSubsystem.stop();
+                }));
 
-                oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.stopShooter()));
+                oi.turret.onTrue(turretSubsystem.runOnce(() -> turretSubsystem.startAiming()));
+                oi.turret.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.stopAiming()));
 
-                // oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading().andThen(turretSubsystem.runOnce(()
-                // -> turretSubsystem.setShooterHeading(0.0))));
                 oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading());
-
-                // oi.shoot.onTrue(turretSubsystem
-                // .runOnce(() -> turretSubsystem.setShooterHeading(Math.PI / 2)));
-                // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
-                // turretSubsystem.setShooterHeading(Math.PI)));
-
-                // oi.trench.whileTrue(autonomousSubsystem.trench());
 
                 drivetrain.registerTelemetry(logger::telemeterize);
         }

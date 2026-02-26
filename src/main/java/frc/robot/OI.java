@@ -22,12 +22,11 @@ public class OI {
     public final DoubleSupplier processed_drive_rot;
 
     public final Trigger shoot;
+    public final Trigger turret;
 
     public final Trigger intake;
     public final Trigger outtake;
-    public final Trigger index;
 
-    public final Trigger trench;
 
     public final Trigger calibrateShooter;
 
@@ -45,15 +44,13 @@ public class OI {
 
         gyroReset = driver.back();
 
-        shoot = driver.a();
+        shoot = operator.rightTrigger();
+        turret = operator.rightBumper();
 
-        intake = driver.rightBumper();
-        outtake = driver.y();
-        index = driver.x();
+        intake = driver.rightTrigger();
+        outtake = driver.y().or(operator.y());
 
-        trench = driver.leftBumper();
-
-        calibrateShooter = driver.start();
+        calibrateShooter = driver.start().or(operator.start());
     }
 
 }

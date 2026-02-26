@@ -65,6 +65,9 @@ public class TurretSubsystem extends SubsystemBase {
     private Translation2d lastTurretTranslation = new Translation2d();
     private long lastUpdateTime = 0;
 
+    private boolean aiming = false;
+    private boolean shooting = false;
+
     private final Field2d field;
 
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
@@ -266,9 +269,14 @@ public class TurretSubsystem extends SubsystemBase {
         double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
 
         double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
+        
+        if (aiming) {    
+            setShooterHeading(targetShooterAngle);
+        }
 
-        setShooterHeading(targetShooterAngle);
-        setShooterSpeed(targetShooterSpeed);
+        if (shooting) {    
+            setShooterSpeed(targetShooterSpeed);
+        }
 
         // SmartDashboard.putNumber("Shooter Target Heading (deg)", targetShooterAngle *
         // 180 / Math.PI);
@@ -345,7 +353,21 @@ public class TurretSubsystem extends SubsystemBase {
         hoodShooterMotor.setControl(hoodRequest);
     }
 
+    public void startAiming() {
+        aiming = true;
+    }
+    
+    public void stopAiming() {
+        aiming = false;
+    }
+
+    public void startShooter() {
+        shooting = true;
+    }
+    
     public void stopShooter() {
+        shooting = false;
+
         mainShooterMotor.stopMotor();
         hoodShooterMotor.stopMotor();
     }
