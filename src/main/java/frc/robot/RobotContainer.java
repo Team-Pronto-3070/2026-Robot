@@ -40,8 +40,8 @@ public class RobotContainer {
 
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-        // public final AutonomousSubsystem autonomousSubsystem = new
-        // AutonomousSubsystem(drivetrain, logger.field);
+        public final AutonomousSubsystem autonomousSubsystem = new
+        AutonomousSubsystem(drivetrain, logger.field);
 
         public final OI oi = new OI();
 
