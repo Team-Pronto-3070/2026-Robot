@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -68,15 +69,18 @@ public class RobotContainer {
 
         private void configureBindings() {
                 drivetrain.setDefaultCommand(drivetrain.run(() -> {
-                        double driveX = oi.processed_drive_x.getAsDouble() * MaxSpeed;
-                        double driveY = oi.processed_drive_y.getAsDouble() * MaxSpeed;
-                        double rotationalRate = oi.processed_drive_rot.getAsDouble() * MaxAngularRate;
+                        double driveX = oi.processed_drive_x.getAsDouble();
+                        double driveY = oi.processed_drive_y.getAsDouble();
+                        double rotationalRate = oi.processed_drive_rot.getAsDouble();
+                        
+                        ChassisSpeeds adjustedInput = autonomousSubsystem.trenchInputAdjust(driveX, driveY, rotationalRate);
 
                         drivetrain.applyRequest(() -> drive
-                                        .withVelocityX(driveX)
-                                        .withVelocityY(driveY)
-                                        .withRotationalRate(rotationalRate))
+                                        .withVelocityX(adjustedInput.vxMetersPerSecond  * MaxSpeed)
+                                        .withVelocityY(adjustedInput.vyMetersPerSecond  * MaxSpeed)
+                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond  * MaxAngularRate))
                                         .execute();
+                        
                 }));
 
                 leftCamera.setDefaultCommand(leftCamera.run(() -> {
@@ -134,15 +138,14 @@ public class RobotContainer {
                 oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                SmartDashboard.putNumber("ShooterCalibrateSpeed", 1.0);
 
                 oi.shoot.onTrue(turretSubsystem.runOnce(() -> {
                         turretSubsystem.startShooter();
-                        intakeSubsystem.intake();
+                        spindexerSubsytem.spin();
                 }));
                 oi.shoot.onFalse(turretSubsystem.runOnce(() -> {
                         turretSubsystem.stopShooter();
-                        intakeSubsystem.stop();
+                        spindexerSubsytem.stop();
                 }));
 
                 oi.turret.onTrue(turretSubsystem.runOnce(() -> turretSubsystem.startAiming()));

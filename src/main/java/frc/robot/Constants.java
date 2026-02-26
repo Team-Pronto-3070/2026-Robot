@@ -20,7 +20,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
-import frc.robot.subsystems.AutonomousSubsystem.TrenchMethod;
 
 public class Constants {
 
@@ -233,26 +232,16 @@ public class Constants {
                 public static final Translation2d redTrenchRight = new Translation2d(
                                 fieldWidth.minus(Inches.of(180)),
                                 fieldHeight.minus(Inches.of(25)));
+                
+                public static final double tolerance = 0.05; //Tolerance for our Y position in the trench
+                public static final double rotationTolerance = 7; //Tolerance for our rotation in the trench
+                public static final double maxForce = 1; //Maximum Y force proportional to drive X 
+                public static final double minForce = 0.2; //Minimum Y force 
+                public static final double yActivationRange = 1.2; //Range from the closest wall 
+                public static final double xActivationRange = 3.5; //Range from center of trench
 
-                /*
-                 * What method to use to decide which trench to drive under
-                 * 
-                 * NEAREST: Drive under the closest trench
-                 * NEAREST_BIASED: Drive under the closest trench but with a bias towards the
-                 * current alliance side
-                 * VELOCITY: Use the current robot velocity to pick the trench we are driving
-                 * towards
-                 */
-                public static final TrenchMethod trenchMethod = TrenchMethod.VELOCITY;
-
-                /*
-                 * We usually want to drive back under our trench, but sometimes we want to
-                 * drive under our opponent's trench, so we move the cutoff line away from our
-                 * alliance wall to allow for a larger area where it will align under our
-                 * trench.
-                 */
-                public static final Distance allianceBias = Inches.of(80);
-
-                public static final LinearVelocity velocityDeadband = MetersPerSecond.of(0.15);
+                //Ration of X distance to Y distance where we want to stop moving on the X axis, bigger = stop earlier 
+                public static final double pauseRatio = 5; 
+                public static final double alignmentExponent = 2;
         }
 }
