@@ -99,6 +99,16 @@ public class AutonomousSubsystem extends SubsystemBase {
                                         inputY += inputX * force;
                                 }
 
+                                if (pose.getRotation().getDegrees() > 0){
+                                        if (pose.getRotation().getDegrees() < 180 - Constants.Autonomous.rotationTolerance){
+                                                rotationInput = 1;
+                                        }
+                                } else {
+                                        if (pose.getRotation().getDegrees() > -180 + Constants.Autonomous.rotationTolerance){
+                                                rotationInput = -1;
+                                        }
+                                }
+                                
                         
                         //Red side facing trenches 
                         } else if (trench.getX() + bumpHalfWidth > pose.getX() && inputX < 0){
@@ -113,6 +123,15 @@ public class AutonomousSubsystem extends SubsystemBase {
                                         inputY += -inputX * force;
 
                                 }
+
+                                if (pose.getRotation().getDegrees() + Constants.Autonomous.rotationTolerance < 0){
+                                        rotationInput = 1;
+                                        //rotationInput = 1 * Math.max(Math.pow(pose.getRotation().getDegrees() / 180, 4), 0.5);
+                                } else if (pose.getRotation().getDegrees() - Constants.Autonomous.rotationTolerance > 0) {
+                                        rotationInput = -1;
+                                        //rotationInput = -1 * Math.max(Math.pow((Math.abs(pose.getRotation().getDegrees()) / 180), 4), 0.5);
+                                }
+                                
                         }
 
                         if (pauseX) {

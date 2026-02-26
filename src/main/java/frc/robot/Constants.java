@@ -213,6 +213,7 @@ public class Constants {
                                 fieldHeight.minus(Inches.of(25)));
                 
                 public static final double tolerance = 0.05; //Tolerance for our Y position in the trench
+                public static final double rotationTolerance = 7; //Tolerance for our rotation in the trench
                 public static final double maxForce = 1; //Maximum Y force proportional to drive X 
                 public static final double minForce = 0.2; //Minimum Y force 
                 public static final double yActivationRange = 1.2; //Range from the closest wall 

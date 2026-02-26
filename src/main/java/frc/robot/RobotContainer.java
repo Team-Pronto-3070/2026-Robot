@@ -77,6 +77,7 @@ public class RobotContainer {
                                         .withVelocityY(adjustedInput.vyMetersPerSecond  * MaxSpeed)
                                         .withRotationalRate(adjustedInput.omegaRadiansPerSecond  * MaxAngularRate))
                                         .execute();
+                        
                 }));
 
                 leftCamera.setDefaultCommand(leftCamera.run(() -> {
