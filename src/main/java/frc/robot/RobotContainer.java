@@ -153,8 +153,6 @@ public class RobotContainer {
                 // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
                 // turretSubsystem.setShooterHeading(Math.PI)));
 
-                oi.trench.whileTrue(autonomousSubsystem.trench());
-
                 drivetrain.registerTelemetry(logger::telemeterize);
         }
 

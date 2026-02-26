@@ -18,7 +18,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
-import frc.robot.subsystems.AutonomousSubsystem.TrenchMethod;
 
 public class Constants {
 
@@ -222,27 +221,5 @@ public class Constants {
                 //Ration of X distance to Y distance where we want to stop moving on the X axis, bigger = stop earlier 
                 public static final double pauseRatio = 5; 
                 public static final double alignmentExponent = 2;
-
-
-                /*
-                 * What method to use to decide which trench to drive under
-                 * 
-                 * NEAREST: Drive under the closest trench
-                 * NEAREST_BIASED: Drive under the closest trench but with a bias towards the
-                 * current alliance side
-                 * VELOCITY: Use the current robot velocity to pick the trench we are driving
-                 * towards
-                 */
-                public static final TrenchMethod trenchMethod = TrenchMethod.VELOCITY;
-
-                /*
-                 * We usually want to drive back under our trench, but sometimes we want to
-                 * drive under our opponent's trench, so we move the cutoff line away from our
-                 * alliance wall to allow for a larger area where it will align under our
-                 * trench.
-                 */
-                public static final Distance allianceBias = Inches.of(80);
-
-                public static final LinearVelocity velocityDeadband = MetersPerSecond.of(0.15);
         }
 }
