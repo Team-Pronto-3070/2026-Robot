@@ -6,8 +6,10 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 import java.util.TreeMap;
 
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
@@ -103,7 +105,16 @@ public class TurretSubsystem extends SubsystemBase {
 
         turretMotor.getConfigurator().apply(talonFXConfigs);
 
-        // turretMotor.setPosition(0.5 * Constants.Turret.turretBeltRatio);
+        // Configure slot 0 gains
+        var shooterSlot0Configs = new Slot0Configs();
+        shooterSlot0Configs.kS = 0.1; // Add 0.1 V output to overcome static friction
+        shooterSlot0Configs.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
+        shooterSlot0Configs.kP = 0.11; // An error of 1 rps results in 0.11 V output
+        shooterSlot0Configs.kI = 0; // no output for integrated error
+        shooterSlot0Configs.kD = 0; // no output for error derivative
+
+        mainShooterMotor.getConfigurator().apply(shooterSlot0Configs);
+        hoodShooterMotor.getConfigurator().apply(shooterSlot0Configs);
     }
 
     @Override
@@ -148,12 +159,24 @@ public class TurretSubsystem extends SubsystemBase {
         Double lowerDistance = treeMap.floorKey(targetDistance);
         Double upperDistance = treeMap.ceilingKey(targetDistance);
 
-        // Handle out-of-range cases
+        // Extrapolate beyond data range using the two nearest points
         if (lowerDistance == null) {
-            return treeMap.get(upperDistance); // Use closest
+            Double nextDistance = treeMap.higherKey(upperDistance);
+            if (nextDistance == null) {
+                return treeMap.get(upperDistance); // Only one data point
+            }
+            double slope = (treeMap.get(nextDistance) - treeMap.get(upperDistance))
+                    / (nextDistance - upperDistance);
+            return treeMap.get(upperDistance) + slope * (targetDistance - upperDistance);
         }
         if (upperDistance == null) {
-            return treeMap.get(lowerDistance); // Use closest
+            Double prevDistance = treeMap.lowerKey(lowerDistance);
+            if (prevDistance == null) {
+                return treeMap.get(lowerDistance); // Only one data point
+            }
+            double slope = (treeMap.get(lowerDistance) - treeMap.get(prevDistance))
+                    / (lowerDistance - prevDistance);
+            return treeMap.get(lowerDistance) + slope * (targetDistance - lowerDistance);
         }
 
         // Linear interpolation
@@ -312,8 +335,18 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void setShooterSpeed(double speed) {
+        speed /= 60.0; // convert from rpm to rps
         speed /= Constants.Turret.shooterRatio;
-        mainShooterMotor.set(-speed);
-        hoodShooterMotor.set(-speed * Constants.Turret.shooterRatio);
+
+        VelocityVoltage mainRequest = new VelocityVoltage(-speed);
+        VelocityVoltage hoodRequest = new VelocityVoltage(-speed * Constants.Turret.shooterRatio);
+
+        mainShooterMotor.setControl(mainRequest);
+        hoodShooterMotor.setControl(hoodRequest);
+    }
+
+    public void stopShooter() {
+        mainShooterMotor.stopMotor();
+        hoodShooterMotor.stopMotor();
     }
 }

@@ -136,7 +136,7 @@ public class RobotContainer {
                 oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
                 oi.trench.whileTrue(turretSubsystem.run(() -> turretSubsystem.update(drivetrain.getState().Pose)));
-                oi.trench.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterSpeed(0.0)));
+                oi.trench.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.stopShooter()));
 
                 SmartDashboard.putNumber("ShooterCalibrateSpeed", 1.0);
 
@@ -144,7 +144,7 @@ public class RobotContainer {
                                 .runOnce(() -> turretSubsystem.setShooterSpeed(
                                                 SmartDashboard.getNumber("ShooterCalibrateSpeed", 1.0))));
 
-                oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterSpeed(0.0)));
+                oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.stopShooter()));
 
                 // oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading().andThen(turretSubsystem.runOnce(()
                 // -> turretSubsystem.setShooterHeading(0.0))));

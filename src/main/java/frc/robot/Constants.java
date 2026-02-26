@@ -136,7 +136,7 @@ public class Constants {
                                 Inches.of(fieldHeight.in(Inches) / 2),
                                 Inches.of(72));
 
-                private static final double ferryOffset = 24;
+                private static final double ferryOffset = 48;
 
                 public static final Translation3d blueFerryLeft = new Translation3d(
                                 Inches.of(ferryOffset),
@@ -176,15 +176,12 @@ public class Constants {
                 // Look up table of Shooter speeds and hub distances. Format is (Distance,
                 // Shooter speed)
                 public static final Map<Double, Double> speedTable = Map.of(
-                                1.83, 0.47,
-                                2.6, 0.47,
-                                3.1, 0.50,
-                                3.6, 0.55,
-                                4.12, 0.60,
-                                4.52, 0.65,
-                                5.1, 0.68,
-                                5.52, 0.71,
-                                6.05, 0.75); // TODO: Test
+                                2.2, 2150.0,
+                                2.8, 2400.0,
+                                3.2, 2550.0,
+                                4.2, 2830.0,
+                                3.65, 2750.0,
+                                4.8, 3000.0);
 
                 public static final TreeMap<Double, Double> speedTreeMap = new TreeMap<>(speedTable);
 
@@ -194,7 +191,7 @@ public class Constants {
                  * off of the time it will take for the projectile to reach the target, but we
                  * will use a constant for now and change later if it is not good enough.
                  */
-                public static final double shootOnTheMoveScale = 0.0;
+                public static final double shootOnTheMoveScale = 1.0;
 
                 // greater than one is forward spin
                 public static final double shooterRatio = 0.9;
@@ -206,7 +203,9 @@ public class Constants {
                 public static final double turretBeltRatio = 126.0 / 18.0;
 
                 public static final Angle clockwiseStop = Degrees.of(160);
-                public static final Angle counterclockwiseStop = Degrees.of(182);
+
+
+                public static final Angle counterclockwiseStop = Degrees.of(180);
 
                 public static final Current hardStopCurrent = Amps.of(26.0);
 
