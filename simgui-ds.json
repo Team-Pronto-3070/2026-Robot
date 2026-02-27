@@ -19,10 +19,13 @@
           "decayRate": 0.0,
           "keyRate": 0.009999999776482582
         },
-        {},
         {
-          "decKey": 74,
-          "incKey": 76
+          "decayRate": 1.0,
+          "incKey": 75,
+          "keyRate": 1.0
+        },
+        {
+          "decKey": 74
         }
       ],
       "axisCount": 5,
@@ -32,7 +35,7 @@
         88,
         67,
         86,
-        75,
+        -1,
         -1
       ],
       "povConfig": [
