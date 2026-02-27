@@ -16,4 +16,4 @@ Features
 | Shoot            |                | Right Trigger
 | Aim              |                | Right Bumper
 | Calibrate Turret | Start          | Start
-|Gyro Reset        | Back
+| Gyro Reset       | Back

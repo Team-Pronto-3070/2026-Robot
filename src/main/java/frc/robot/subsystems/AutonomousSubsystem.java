@@ -40,7 +40,11 @@ public class AutonomousSubsystem extends SubsystemBase {
                 this.field = field;
         }
 
-        public ChassisSpeeds trenchInputAdjust(double inputX, double inputY, double rotationInput) {
+        public ChassisSpeeds trenchInputAdjust(double inputX, double inputY, double rotationInput, boolean apply) {
+
+                if (!apply) {
+                        return new ChassisSpeeds(inputX, inputY, rotationInput);
+                }
 
                 Translation2d trench = Constants.Autonomous.redTrenchLeft;
 

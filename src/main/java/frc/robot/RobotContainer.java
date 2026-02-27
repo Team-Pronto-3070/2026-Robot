@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.AutonomousSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -40,8 +41,7 @@ public class RobotContainer {
 
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-        public final AutonomousSubsystem autonomousSubsystem = new
-        AutonomousSubsystem(drivetrain, logger.field);
+        public final AutonomousSubsystem autonomousSubsystem = new AutonomousSubsystem(drivetrain, logger.field);
 
         public final OI oi = new OI();
 
@@ -64,6 +64,9 @@ public class RobotContainer {
 
                 SmartDashboard.putBoolean("On Field", false);
 
+                new Trigger(() -> DriverStation.isFMSAttached()).onChange(Commands
+                                .run(() -> SmartDashboard.putBoolean("On Field", DriverStation.isFMSAttached())));
+
                 configureBindings();
         }
 
@@ -72,15 +75,15 @@ public class RobotContainer {
                         double driveX = oi.processed_drive_x.getAsDouble();
                         double driveY = oi.processed_drive_y.getAsDouble();
                         double rotationalRate = oi.processed_drive_rot.getAsDouble();
-                        
-                        ChassisSpeeds adjustedInput = autonomousSubsystem.trenchInputAdjust(driveX, driveY, rotationalRate);
+
+                        ChassisSpeeds adjustedInput = autonomousSubsystem.trenchInputAdjust(driveX, driveY,
+                                        rotationalRate, SmartDashboard.getBoolean("On Field", false));
 
                         drivetrain.applyRequest(() -> drive
-                                        .withVelocityX(adjustedInput.vxMetersPerSecond  * MaxSpeed)
-                                        .withVelocityY(adjustedInput.vyMetersPerSecond  * MaxSpeed)
-                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond  * MaxAngularRate))
+                                        .withVelocityX(adjustedInput.vxMetersPerSecond * MaxSpeed)
+                                        .withVelocityY(adjustedInput.vyMetersPerSecond * MaxSpeed)
+                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond * MaxAngularRate))
                                         .execute();
-                        
                 }));
 
                 leftCamera.setDefaultCommand(leftCamera.run(() -> {
@@ -120,7 +123,24 @@ public class RobotContainer {
                 }).ignoringDisable(true));
 
                 turretSubsystem.setDefaultCommand(
-                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose))
+                                turretSubsystem.runOnce(() -> {
+                                        turretSubsystem.update(drivetrain.getState().Pose);
+
+                                        if (SmartDashboard.getBoolean("On Field", false)) {
+                                                if (oi.turret.getAsBoolean()) {
+                                                        turretSubsystem.stopAiming();
+                                                } else {
+                                                        turretSubsystem.startAiming();
+                                                }
+                                        } else {
+                                                if (oi.turret.getAsBoolean()) {
+                                                        turretSubsystem.startAiming();
+                                                } else {
+                                                        turretSubsystem.stopAiming();
+                                                }
+
+                                        }
+                                })
                                                 .ignoringDisable(true));
 
                 // Idle while the robot is disabled. This ensures the configured
@@ -137,7 +157,6 @@ public class RobotContainer {
 
                 oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
-
 
                 oi.shoot.onTrue(turretSubsystem.runOnce(() -> {
                         turretSubsystem.startShooter();
