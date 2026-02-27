@@ -185,6 +185,12 @@ public class Constants {
                 public static final TreeMap<Double, Double> speedTreeMap = new TreeMap<>(speedTable);
 
                 /*
+                * Speed function is verticalShift + verticalScale * ln(distance)
+                */
+                public static final double speedFunctionVerticalShift = 1280.0;
+                public static final double speedFunctionVerticalScale = 1100.0;
+
+                /*
                  * When shooting on the move, we subtract the robot velocity from the target
                  * position to adjust the trajectory. I think this should technically be based
                  * off of the time it will take for the projectile to reach the target, but we
@@ -192,8 +198,13 @@ public class Constants {
                  */
                 public static final double shootOnTheMoveScale = 1.0;
 
-                // greater than one is forward spin
+                // Greater than one is forward spin
                 public static final double shooterRatio = 0.9;
+                
+                public static final Distance mainShooterRadius = Inches.of(2);
+                public static final Distance hoodShooterRadius = Inches.of(1);
+
+                public static final double radiusRatio = mainShooterRadius.div(hoodShooterRadius).magnitude();
 
                 public static final int mainShooterMotorID = 20;
                 public static final int hoodShooterMotorID = 21;

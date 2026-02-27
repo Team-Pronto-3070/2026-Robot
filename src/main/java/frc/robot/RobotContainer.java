@@ -62,7 +62,7 @@ public class RobotContainer {
 
                 SmartDashboard.putData("Field", logger.field);
 
-                SmartDashboard.putBoolean("On Field", false);
+                SmartDashboard.putBoolean("On Field", !RobotBase.isReal());
 
                 new Trigger(() -> DriverStation.isFMSAttached()).onChange(Commands
                                 .run(() -> SmartDashboard.putBoolean("On Field", DriverStation.isFMSAttached())));
@@ -158,9 +158,14 @@ public class RobotContainer {
                 oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
                 oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                oi.shoot.onTrue(turretSubsystem.runOnce(() -> {
+                oi.shoot.whileTrue(turretSubsystem.run(() -> {
+                        if (Math.abs(turretSubsystem.getTurretDiff().in(Degrees)) < 1) {
+                                spindexerSubsytem.spin();
+                        } else {
+                                spindexerSubsytem.stop();
+                        }
+
                         turretSubsystem.startShooter();
-                        spindexerSubsytem.spin();
                 }));
                 oi.shoot.onFalse(turretSubsystem.runOnce(() -> {
                         turretSubsystem.stopShooter();

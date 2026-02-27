@@ -49,7 +49,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                 Translation2d trench = Constants.Autonomous.redTrenchLeft;
 
                 Pose2d pose = drivetrain.getState().Pose;
-
+                
                 double bumpHalfWidth = 0.5; // exact half of bump is 0.564
 
                 if (pose.getMeasureX().lt(Constants.fieldWidth.div(2))) {
@@ -97,14 +97,11 @@ public class AutonomousSubsystem extends SubsystemBase {
                                 Angle targetRotation = Radians
                                                 .of(Math.round(pose.getRotation().getRadians() / (Math.PI)) * Math.PI);
 
-                                if (pose.getRotation().getDegrees()
-                                                + Constants.Autonomous.rotationTolerance < targetRotation
-                                                                .in(Degrees)) {
+                                if (pose.getRotation().getDegrees() + Constants.Autonomous.rotationTolerance < targetRotation.in(Degrees)) {
                                         rotationInput = 1;
                                         // rotationInput = 1 * Math.max(Math.pow(pose.getRotation().getDegrees() / 180,
                                         // 4), 0.5);
-                                } else if (pose.getRotation().getDegrees()
-                                                - Constants.Autonomous.rotationTolerance > targetRotation.in(Degrees)) {
+                                } else if (pose.getRotation().getDegrees() - Constants.Autonomous.rotationTolerance > targetRotation.in(Degrees)) {
                                         rotationInput = -1;
                                         // rotationInput = -1 *
                                         // Math.max(Math.pow((Math.abs(pose.getRotation().getDegrees()) / 180), 4),
@@ -131,15 +128,10 @@ public class AutonomousSubsystem extends SubsystemBase {
                                 Angle targetRotation = Radians
                                                 .of(Math.round(pose.getRotation().getRadians() / (Math.PI)) * Math.PI);
 
-                                if (pose.getRotation().getDegrees()
-                                                + Constants.Autonomous.rotationTolerance < targetRotation
-                                                                .in(Degrees)) {
-                                        rotationInput = 1;
+                                if (pose.getRotation().getDegrees() + Constants.Autonomous.rotationTolerance < targetRotation.in(Degrees)) {rotationInput = 1;
                                         // rotationInput = 1 * Math.max(Math.pow(pose.getRotation().getDegrees() / 180,
                                         // 4), 0.5);
-                                } else if (pose.getRotation().getDegrees()
-                                                - Constants.Autonomous.rotationTolerance > targetRotation.in(Degrees)) {
-                                        rotationInput = -1;
+                                } else if (pose.getRotation().getDegrees() - Constants.Autonomous.rotationTolerance > targetRotation.in(Degrees)) {rotationInput = -1;
                                         // rotationInput = -1 *
                                         // Math.max(Math.pow((Math.abs(pose.getRotation().getDegrees()) / 180), 4),
                                         // 0.5);

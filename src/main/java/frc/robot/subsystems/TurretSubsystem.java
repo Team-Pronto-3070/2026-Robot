@@ -30,9 +30,11 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -67,6 +69,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     private boolean aiming = false;
     private boolean shooting = false;
+
+    private Angle headingDiff = Radians.of(0);
 
     private final Field2d field;
 
@@ -150,44 +154,49 @@ public class TurretSubsystem extends SubsystemBase {
         );
     }
 
+    // private double calculateSpeedForDistance(double targetDistance) {
+    //     TreeMap<Double, Double> treeMap = Constants.Turret.speedTreeMap;
+
+    //     // Handle exact matches
+    //     if (treeMap.containsKey(targetDistance)) {
+    //         return treeMap.get(targetDistance);
+    //     }
+
+    //     // Get the distances immediately below and above target
+    //     Double lowerDistance = treeMap.floorKey(targetDistance);
+    //     Double upperDistance = treeMap.ceilingKey(targetDistance);
+
+    //     // Extrapolate beyond data range using the two nearest points
+    //     if (lowerDistance == null) {
+    //         Double nextDistance = treeMap.higherKey(upperDistance);
+    //         if (nextDistance == null) {
+    //             return treeMap.get(upperDistance); // Only one data point
+    //         }
+    //         double slope = (treeMap.get(nextDistance) - treeMap.get(upperDistance))
+    //                 / (nextDistance - upperDistance);
+    //         return treeMap.get(upperDistance) + slope * (targetDistance - upperDistance);
+    //     }
+    //     if (upperDistance == null) {
+    //         Double prevDistance = treeMap.lowerKey(lowerDistance);
+    //         if (prevDistance == null) {
+    //             return treeMap.get(lowerDistance); // Only one data point
+    //         }
+    //         double slope = (treeMap.get(lowerDistance) - treeMap.get(prevDistance))
+    //                 / (lowerDistance - prevDistance);
+    //         return treeMap.get(lowerDistance) + slope * (targetDistance - lowerDistance);
+    //     }
+
+    //     // Linear interpolation
+    //     double lowerSpeed = treeMap.get(lowerDistance);
+    //     double upperSpeed = treeMap.get(upperDistance);
+
+    //     double ratio = (targetDistance - lowerDistance) / (upperDistance - lowerDistance);
+    //     return lowerSpeed + ratio * (upperSpeed - lowerSpeed);
+    // }
+
     private double calculateSpeedForDistance(double targetDistance) {
-        TreeMap<Double, Double> treeMap = Constants.Turret.speedTreeMap;
-
-        // Handle exact matches
-        if (treeMap.containsKey(targetDistance)) {
-            return treeMap.get(targetDistance);
-        }
-
-        // Get the distances immediately below and above target
-        Double lowerDistance = treeMap.floorKey(targetDistance);
-        Double upperDistance = treeMap.ceilingKey(targetDistance);
-
-        // Extrapolate beyond data range using the two nearest points
-        if (lowerDistance == null) {
-            Double nextDistance = treeMap.higherKey(upperDistance);
-            if (nextDistance == null) {
-                return treeMap.get(upperDistance); // Only one data point
-            }
-            double slope = (treeMap.get(nextDistance) - treeMap.get(upperDistance))
-                    / (nextDistance - upperDistance);
-            return treeMap.get(upperDistance) + slope * (targetDistance - upperDistance);
-        }
-        if (upperDistance == null) {
-            Double prevDistance = treeMap.lowerKey(lowerDistance);
-            if (prevDistance == null) {
-                return treeMap.get(lowerDistance); // Only one data point
-            }
-            double slope = (treeMap.get(lowerDistance) - treeMap.get(prevDistance))
-                    / (lowerDistance - prevDistance);
-            return treeMap.get(lowerDistance) + slope * (targetDistance - lowerDistance);
-        }
-
-        // Linear interpolation
-        double lowerSpeed = treeMap.get(lowerDistance);
-        double upperSpeed = treeMap.get(upperDistance);
-
-        double ratio = (targetDistance - lowerDistance) / (upperDistance - lowerDistance);
-        return lowerSpeed + ratio * (upperSpeed - lowerSpeed);
+        return Constants.Turret.speedFunctionVerticalShift
+                + Constants.Turret.speedFunctionVerticalScale * Math.log(targetDistance);
     }
 
     // Give the turret a new robot position to calculate speeds for
@@ -269,6 +278,14 @@ public class TurretSubsystem extends SubsystemBase {
         double distanceToTarget = Math.hypot(turret.getX() - target.getX(), turret.getY() - target.getY());
 
         double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
+
+        double currentHeading = RobotBase.isReal() ? turretMotor.getPosition().getValueAsDouble() * 2 * Math.PI / Constants.Turret.turretBeltRatio : turretMotorSim.getAngularPositionRad() / Constants.Turret.turretBeltRatio;
+        headingDiff = Radians.of(targetShooterAngle - currentHeading);
+        if (headingDiff.in(Degrees) > 180) {
+            headingDiff = Degrees.of(-180).plus(headingDiff.minus(Degrees.of(180)));
+        }
+
+        SmartDashboard.putNumber("Turret Heading Diff (deg)", headingDiff.in(Degrees));
         
         if (aiming) {    
             setShooterHeading(targetShooterAngle);
@@ -344,13 +361,16 @@ public class TurretSubsystem extends SubsystemBase {
 
     public void setShooterSpeed(double speed) {
         speed /= 60.0; // convert from rpm to rps
-        speed /= Constants.Turret.shooterRatio;
 
         VelocityVoltage mainRequest = new VelocityVoltage(-speed);
-        VelocityVoltage hoodRequest = new VelocityVoltage(-speed * Constants.Turret.shooterRatio);
+        VelocityVoltage hoodRequest = new VelocityVoltage(-speed * Constants.Turret.radiusRatio * Constants.Turret.shooterRatio);
 
         mainShooterMotor.setControl(mainRequest);
         hoodShooterMotor.setControl(hoodRequest);
+    }
+
+    public Angle getTurretDiff() {
+        return headingDiff;
     }
 
     public void startAiming() {
