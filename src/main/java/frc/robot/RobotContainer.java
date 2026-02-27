@@ -9,18 +9,21 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.AutonomousSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SpindexerSubsytem;
 import frc.robot.subsystems.TurretSubsystem;
+import frc.robot.subsystems.LEDSubsystem;
 
 public class RobotContainer {
         // kSpeedAt12Volts desired top speed
@@ -48,6 +51,8 @@ public class RobotContainer {
         public final CameraSubsystem frontRightCamera = new CameraSubsystem(Constants.Vision.frontRightParams);
         public final CameraSubsystem rightCamera = new CameraSubsystem(Constants.Vision.rightParams);
 
+        public final LEDSubsystem ledSubsystem = new LEDSubsystem();
+
         public final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
         public final SpindexerSubsytem spindexerSubsytem = new SpindexerSubsytem();
 
@@ -60,19 +65,27 @@ public class RobotContainer {
 
                 SmartDashboard.putData("Field", logger.field);
 
+                SmartDashboard.putBoolean("On Field", !RobotBase.isReal());
+
+                new Trigger(() -> DriverStation.isFMSAttached()).onChange(Commands
+                                .run(() -> SmartDashboard.putBoolean("On Field", DriverStation.isFMSAttached())));
+
                 configureBindings();
         }
 
         private void configureBindings() {
                 drivetrain.setDefaultCommand(drivetrain.run(() -> {
-                        double driveX = oi.processed_drive_x.getAsDouble() * MaxSpeed;
-                        double driveY = oi.processed_drive_y.getAsDouble() * MaxSpeed;
-                        double rotationalRate = oi.processed_drive_rot.getAsDouble() * MaxAngularRate;
+                        double driveX = oi.processed_drive_x.getAsDouble();
+                        double driveY = oi.processed_drive_y.getAsDouble();
+                        double rotationalRate = oi.processed_drive_rot.getAsDouble();
+
+                        ChassisSpeeds adjustedInput = autonomousSubsystem.trenchInputAdjust(driveX, driveY,
+                                        rotationalRate, SmartDashboard.getBoolean("On Field", false));
 
                         drivetrain.applyRequest(() -> drive
-                                        .withVelocityX(driveX)
-                                        .withVelocityY(driveY)
-                                        .withRotationalRate(rotationalRate))
+                                        .withVelocityX(adjustedInput.vxMetersPerSecond * MaxSpeed)
+                                        .withVelocityY(adjustedInput.vyMetersPerSecond * MaxSpeed)
+                                        .withRotationalRate(adjustedInput.omegaRadiansPerSecond * MaxAngularRate))
                                         .execute();
                 }));
 
@@ -80,8 +93,8 @@ public class RobotContainer {
                         leftCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                leftCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                // leftCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
@@ -89,8 +102,8 @@ public class RobotContainer {
                         frontLeftCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                frontLeftCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                // frontLeftCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
@@ -98,8 +111,8 @@ public class RobotContainer {
                         frontRightCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                frontRightCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                // frontRightCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
@@ -107,13 +120,32 @@ public class RobotContainer {
                         rightCamera.getLatestEstimation().ifPresent(est -> {
                                 drivetrain.addVisionMeasurement(
                                                 est.estimatedPose.toPose2d(),
-                                                est.timestampSeconds,
-                                                rightCamera.getEstimationStdDevs());
+                                                est.timestampSeconds);
+                                // rightCamera.getEstimationStdDevs());
                         });
                 }).ignoringDisable(true));
 
                 turretSubsystem.setDefaultCommand(
-                                turretSubsystem.runOnce(() -> turretSubsystem.update(drivetrain.getState().Pose))
+                                turretSubsystem.runOnce(() -> {
+                                        turretSubsystem.update(drivetrain.getState().Pose);
+
+                                        if (SmartDashboard.getBoolean("On Field", false)) {
+                                                if (oi.turret.getAsBoolean()) {
+                                                        turretSubsystem.stopAiming();
+                                                } else {
+                                                        turretSubsystem.startAiming();
+                                                }
+                                        } else {
+                                                if (oi.turret.getAsBoolean()) {
+                                                        turretSubsystem.startAiming();
+                                                } else {
+                                                        turretSubsystem.stopAiming();
+                                                }
+
+                                        }
+
+                                        ledSubsystem.setLock(turretSubsystem.getTurretDiff().in(Degrees) < 1);
+                                })
                                                 .ignoringDisable(true));
 
                 // Idle while the robot is disabled. This ensures the configured
@@ -125,38 +157,50 @@ public class RobotContainer {
                 // Reset the field-centric heading on left bumper press.
                 oi.gyroReset.onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-                oi.index.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.spin()));
-                oi.index.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
-
                 oi.outtake.onTrue(spindexerSubsytem.runOnce(() -> spindexerSubsytem.outtake()));
                 oi.outtake.onFalse(spindexerSubsytem.runOnce(() -> spindexerSubsytem.stop()));
 
-                // oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
-                // oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
+                oi.intake.onTrue(intakeSubsystem.runOnce(() -> intakeSubsystem.intake()));
+                oi.intake.onFalse(intakeSubsystem.runOnce(() -> intakeSubsystem.stop()));
 
-                // oi.intake.whileTrue(turretSubsystem.run(() ->
-                // turretSubsystem.update(drivetrain.getState().Pose)));
+                oi.shoot.whileTrue(turretSubsystem.run(() -> {
+                        if (Math.abs(turretSubsystem.getTurretDiff().in(Degrees)) < 1) {
+                                spindexerSubsytem.spin();
+                                ledSubsystem.setShooting(true);
+                        } else {
+                                spindexerSubsytem.stop();
+                                ledSubsystem.setShooting(false);
+                        }
 
-                oi.shoot.onTrue(turretSubsystem
-                                .runOnce(() -> turretSubsystem.setShooterSpeed(1.0 /
-                                                Constants.Turret.shooterRatio)));
-                oi.shoot.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.setShooterSpeed(0.0)));
+                        turretSubsystem.startShooter();
+                }));
+                oi.shoot.onFalse(turretSubsystem.runOnce(() -> {
+                        turretSubsystem.stopShooter();
+                        spindexerSubsytem.stop();
+                        ledSubsystem.setShooting(false);
+                }));
 
-                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading()
-                                .andThen(turretSubsystem.runOnce(() -> turretSubsystem.setShooterHeading(0.0))));
-                // oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading());
+                oi.turret.onTrue(turretSubsystem.runOnce(() -> turretSubsystem.startAiming()));
+                oi.turret.onFalse(turretSubsystem.runOnce(() -> turretSubsystem.stopAiming()));
 
-                // oi.shoot.onTrue(turretSubsystem
-                // .runOnce(() -> turretSubsystem.setShooterHeading(Math.PI / 2)));
-                // oi.shoot.onFalse(turretSubsystem.runOnce(() ->
-                // turretSubsystem.setShooterHeading(Math.PI)));
-
-                oi.trench.whileTrue(autonomousSubsystem.trench());
+                oi.calibrateShooter.onTrue(turretSubsystem.calibrateHeading());
 
                 drivetrain.registerTelemetry(logger::telemeterize);
         }
 
         public Command getAutonomousCommand() {
-                return autonomousSubsystem.getAutonomousCommand();
+                // Simple drive forward auton
+                final var idle = new SwerveRequest.Idle();
+                return Commands.sequence(
+                                // Reset our field centric heading to match the robot
+                                // facing away from our alliance station wall (0 deg).
+                                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+                                // Then slowly drive forward (away from us) for 5 seconds.
+                                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
+                                                .withVelocityY(0)
+                                                .withRotationalRate(0))
+                                                .withTimeout(5.0),
+                                // Finally idle for the rest of auton
+                                drivetrain.applyRequest(() -> idle));
         }
 }

@@ -64,6 +64,16 @@ public class CameraSubsystem extends SubsystemBase {
         if (!result.isEmpty()) {
             var latest = result.get(result.size() - 1); // Items are ordered oldest to newest
 
+            // latest.targets.removeIf((PhotonTrackedTarget t) -> t.getArea() < 0.1);
+
+            // latest.getTargets().forEach(target -> {
+            //     System.out.println("Target ID: " + target.getFiducialId() + " Area: " +
+            //     target.getArea());
+            //     if (target.getArea() < 0.120) {
+            //         latest.targets.remove(target);
+            //     }
+            // });
+
             var optional = poseEstimator.estimateCoprocMultiTagPose(latest);
 
             // If not present and we try to use it it will crash code

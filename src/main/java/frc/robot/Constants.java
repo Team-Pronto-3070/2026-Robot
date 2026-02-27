@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -16,9 +17,9 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
-import frc.robot.subsystems.AutonomousSubsystem.TrenchMethod;
 
 public class Constants {
 
@@ -48,13 +49,27 @@ public class Constants {
 
                 // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
+                private static final Distance groundDistance = Inches.of(20.5); // distance off ground
+
+                // distance between two front cameras
+                private static final Distance frontWidth = Inches.of(21 + (11 / 16));
+
+                // distance from center to front cameras
+                private static final Distance frontDistance = Inches.of((33.5 / 2) - (3 + (7 / 8)) - (6 / 8));
+
+                // distance between two side cameras
+                private static final Distance sideWidth = Inches.of(25 + (5 / 16));
+
+                // distance from center to side cameras
+                private static final Distance sideDistance = Inches.of((33.5 / 2) - (3 + (7 / 8)) - (3 + (6 / 16)));
+
                 public static final CameraParams leftParams = new CameraParams(
                                 "Left",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of(9.753),
-                                                                Inches.of(12.6),
-                                                                Inches.of(20.5)),
+                                                                sideDistance,
+                                                                sideWidth.div(2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(90))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -66,9 +81,9 @@ public class Constants {
                                 "Front Left",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of((26.5 / 2) - 1.25),
-                                                                Inches.of(21.724 / 2),
-                                                                Inches.of(20.5)),
+                                                                frontDistance,
+                                                                frontWidth.div(2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(20))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -80,9 +95,9 @@ public class Constants {
                                 "Front Right",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of((26.5 / 2) + 1.25),
-                                                                Inches.of(-21.724 / 2),
-                                                                Inches.of(20.5)),
+                                                                frontDistance,
+                                                                frontWidth.div(-2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-20))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -94,9 +109,9 @@ public class Constants {
                                 "Right",
                                 new Transform3d(
                                                 new Translation3d(
-                                                                Inches.of(9.753),
-                                                                Inches.of(-12.6),
-                                                                Inches.of(20.5)),
+                                                                sideDistance,
+                                                                sideWidth.div(-2),
+                                                                groundDistance),
                                                 new Rotation3d(Degrees.of(0), Degrees.of(-20), Degrees.of(-90))),
                                 // The standard deviations of our vision estimated poses, which affect
                                 // correction rate
@@ -120,7 +135,7 @@ public class Constants {
                                 Inches.of(fieldHeight.in(Inches) / 2),
                                 Inches.of(72));
 
-                private static final double ferryOffset = 24;
+                private static final double ferryOffset = 48;
 
                 public static final Translation3d blueFerryLeft = new Translation3d(
                                 Inches.of(ferryOffset),
@@ -160,13 +175,20 @@ public class Constants {
                 // Look up table of Shooter speeds and hub distances. Format is (Distance,
                 // Shooter speed)
                 public static final Map<Double, Double> speedTable = Map.of(
-                                0.0, 0.0,
-                                1.0, 1000.0,
-                                2.0, 2000.0,
-                                3.0, 3000.0,
-                                6.0, 6000.0); // TODO: Test
+                                2.2, 2150.0,
+                                2.8, 2400.0,
+                                3.2, 2550.0,
+                                4.2, 2830.0,
+                                3.65, 2750.0,
+                                4.8, 3000.0);
 
                 public static final TreeMap<Double, Double> speedTreeMap = new TreeMap<>(speedTable);
+
+                /*
+                * Speed function is verticalShift + verticalScale * ln(distance)
+                */
+                public static final double speedFunctionVerticalShift = 1280.0;
+                public static final double speedFunctionVerticalScale = 1100.0;
 
                 /*
                  * When shooting on the move, we subtract the robot velocity from the target
@@ -174,18 +196,28 @@ public class Constants {
                  * off of the time it will take for the projectile to reach the target, but we
                  * will use a constant for now and change later if it is not good enough.
                  */
-                public static final double shootOnTheMoveScale = 0.1;
+                public static final double shootOnTheMoveScale = 1.0;
 
-                public static final double shooterRatio = 1.2;
+                // Greater than one is forward spin
+                public static final double shooterRatio = 0.9;
+                
+                public static final Distance mainShooterRadius = Inches.of(2);
+                public static final Distance hoodShooterRadius = Inches.of(1);
+
+                public static final double radiusRatio = mainShooterRadius.div(hoodShooterRadius).magnitude();
 
                 public static final int mainShooterMotorID = 20;
                 public static final int hoodShooterMotorID = 21;
                 public static final int turretMotorID = 19;
 
-                public static final double turretBeltRatio = 126.0 / 16.0;
+                public static final double turretBeltRatio = 126.0 / 18.0;
 
-                public static final Angle clockwiseStop = Degrees.of(170);
-                public static final Angle counterclockwiseStop = Degrees.of(160);
+                public static final Angle clockwiseStop = Degrees.of(160);
+
+
+                public static final Angle counterclockwiseStop = Degrees.of(180);
+
+                public static final Current hardStopCurrent = Amps.of(26.0);
 
         }
 
@@ -211,26 +243,16 @@ public class Constants {
                 public static final Translation2d redTrenchRight = new Translation2d(
                                 fieldWidth.minus(Inches.of(180)),
                                 fieldHeight.minus(Inches.of(25)));
+                
+                public static final double tolerance = 0.05; //Tolerance for our Y position in the trench
+                public static final double rotationTolerance = 7; //Tolerance for our rotation in the trench
+                public static final double maxForce = 1; //Maximum Y force proportional to drive X 
+                public static final double minForce = 0.2; //Minimum Y force 
+                public static final double yActivationRange = 1.2; //Range from the closest wall 
+                public static final double xActivationRange = 3.5; //Range from center of trench
 
-                /*
-                 * What method to use to decide which trench to drive under
-                 * 
-                 * NEAREST: Drive under the closest trench
-                 * NEAREST_BIASED: Drive under the closest trench but with a bias towards the
-                 * current alliance side
-                 * VELOCITY: Use the current robot velocity to pick the trench we are driving
-                 * towards
-                 */
-                public static final TrenchMethod trenchMethod = TrenchMethod.VELOCITY;
-
-                /*
-                 * We usually want to drive back under our trench, but sometimes we want to
-                 * drive under our opponent's trench, so we move the cutoff line away from our
-                 * alliance wall to allow for a larger area where it will align under our
-                 * trench.
-                 */
-                public static final Distance allianceBias = Inches.of(80);
-
-                public static final LinearVelocity velocityDeadband = MetersPerSecond.of(0.15);
+                //Ration of X distance to Y distance where we want to stop moving on the X axis, bigger = stop earlier 
+                public static final double pauseRatio = 5; 
+                public static final double alignmentExponent = 2;
         }
 }

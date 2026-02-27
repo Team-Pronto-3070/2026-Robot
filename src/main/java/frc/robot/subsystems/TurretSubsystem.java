@@ -1,12 +1,15 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 import java.util.TreeMap;
 
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
@@ -27,9 +30,11 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -62,6 +67,11 @@ public class TurretSubsystem extends SubsystemBase {
     private Translation2d lastTurretTranslation = new Translation2d();
     private long lastUpdateTime = 0;
 
+    private boolean aiming = false;
+    private boolean shooting = false;
+
+    private Angle headingDiff = Radians.of(0);
+
     private final Field2d field;
 
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
@@ -92,8 +102,8 @@ public class TurretSubsystem extends SubsystemBase {
 
         // set Motion Magic settings
         var motionMagicConfigs = talonFXConfigs.MotionMagic;
-        motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity of 80 rps
-        motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of 160 rps/s (0.5 seconds)
+        motionMagicConfigs.MotionMagicCruiseVelocity = 8; // Target cruise velocity of 80 rps
+        motionMagicConfigs.MotionMagicAcceleration = 16; // Target acceleration of 160 rps/s (0.5 seconds)
         // motionMagicConfigs.MotionMagicCruiseVelocity = 80; // Target cruise velocity
         // of 80 rps
         // motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of
@@ -102,7 +112,16 @@ public class TurretSubsystem extends SubsystemBase {
 
         turretMotor.getConfigurator().apply(talonFXConfigs);
 
-        // turretMotor.setPosition(0.5 * Constants.Turret.turretBeltRatio);
+        // Configure slot 0 gains
+        var shooterSlot0Configs = new Slot0Configs();
+        shooterSlot0Configs.kS = 0.1; // Add 0.1 V output to overcome static friction
+        shooterSlot0Configs.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
+        shooterSlot0Configs.kP = 0.11; // An error of 1 rps results in 0.11 V output
+        shooterSlot0Configs.kI = 0; // no output for integrated error
+        shooterSlot0Configs.kD = 0; // no output for error derivative
+
+        mainShooterMotor.getConfigurator().apply(shooterSlot0Configs);
+        hoodShooterMotor.getConfigurator().apply(shooterSlot0Configs);
     }
 
     @Override
@@ -135,32 +154,49 @@ public class TurretSubsystem extends SubsystemBase {
         );
     }
 
+    // private double calculateSpeedForDistance(double targetDistance) {
+    //     TreeMap<Double, Double> treeMap = Constants.Turret.speedTreeMap;
+
+    //     // Handle exact matches
+    //     if (treeMap.containsKey(targetDistance)) {
+    //         return treeMap.get(targetDistance);
+    //     }
+
+    //     // Get the distances immediately below and above target
+    //     Double lowerDistance = treeMap.floorKey(targetDistance);
+    //     Double upperDistance = treeMap.ceilingKey(targetDistance);
+
+    //     // Extrapolate beyond data range using the two nearest points
+    //     if (lowerDistance == null) {
+    //         Double nextDistance = treeMap.higherKey(upperDistance);
+    //         if (nextDistance == null) {
+    //             return treeMap.get(upperDistance); // Only one data point
+    //         }
+    //         double slope = (treeMap.get(nextDistance) - treeMap.get(upperDistance))
+    //                 / (nextDistance - upperDistance);
+    //         return treeMap.get(upperDistance) + slope * (targetDistance - upperDistance);
+    //     }
+    //     if (upperDistance == null) {
+    //         Double prevDistance = treeMap.lowerKey(lowerDistance);
+    //         if (prevDistance == null) {
+    //             return treeMap.get(lowerDistance); // Only one data point
+    //         }
+    //         double slope = (treeMap.get(lowerDistance) - treeMap.get(prevDistance))
+    //                 / (lowerDistance - prevDistance);
+    //         return treeMap.get(lowerDistance) + slope * (targetDistance - lowerDistance);
+    //     }
+
+    //     // Linear interpolation
+    //     double lowerSpeed = treeMap.get(lowerDistance);
+    //     double upperSpeed = treeMap.get(upperDistance);
+
+    //     double ratio = (targetDistance - lowerDistance) / (upperDistance - lowerDistance);
+    //     return lowerSpeed + ratio * (upperSpeed - lowerSpeed);
+    // }
+
     private double calculateSpeedForDistance(double targetDistance) {
-        TreeMap<Double, Double> treeMap = Constants.Turret.speedTreeMap;
-
-        // Handle exact matches
-        if (treeMap.containsKey(targetDistance)) {
-            return treeMap.get(targetDistance);
-        }
-
-        // Get the distances immediately below and above target
-        Double lowerDistance = treeMap.floorKey(targetDistance);
-        Double upperDistance = treeMap.ceilingKey(targetDistance);
-
-        // Handle out-of-range cases
-        if (lowerDistance == null) {
-            return treeMap.get(upperDistance); // Use closest
-        }
-        if (upperDistance == null) {
-            return treeMap.get(lowerDistance); // Use closest
-        }
-
-        // Linear interpolation
-        double lowerSpeed = treeMap.get(lowerDistance);
-        double upperSpeed = treeMap.get(upperDistance);
-
-        double ratio = (targetDistance - lowerDistance) / (upperDistance - lowerDistance);
-        return lowerSpeed + ratio * (upperSpeed - lowerSpeed);
+        return Constants.Turret.speedFunctionVerticalShift
+                + Constants.Turret.speedFunctionVerticalScale * Math.log(targetDistance);
     }
 
     // Give the turret a new robot position to calculate speeds for
@@ -243,8 +279,21 @@ public class TurretSubsystem extends SubsystemBase {
 
         double targetShooterSpeed = calculateSpeedForDistance(distanceToTarget);
 
-        setShooterHeading(targetShooterAngle);
-        // setShooterSpeed(targetShooterSpeed);
+        double currentHeading = RobotBase.isReal() ? turretMotor.getPosition().getValueAsDouble() * 2 * Math.PI / Constants.Turret.turretBeltRatio : turretMotorSim.getAngularPositionRad() / Constants.Turret.turretBeltRatio;
+        headingDiff = Radians.of(targetShooterAngle - currentHeading);
+        if (headingDiff.in(Degrees) > 180) {
+            headingDiff = Degrees.of(-180).plus(headingDiff.minus(Degrees.of(180)));
+        }
+
+        SmartDashboard.putNumber("Turret Heading Diff (deg)", headingDiff.in(Degrees));
+        
+        if (aiming) {    
+            setShooterHeading(targetShooterAngle);
+        }
+
+        if (shooting) {    
+            setShooterSpeed(targetShooterSpeed);
+        }
 
         // SmartDashboard.putNumber("Shooter Target Heading (deg)", targetShooterAngle *
         // 180 / Math.PI);
@@ -266,27 +315,27 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public Command calibrateHeading() {
-        // return this.run(() -> {
-        // turretMotor.stopMotor();
-        // turretMotor.set(0.05);
-        // // System.out.println("Calibrating Turret");
-        // }).until(() -> turretMotor.getTorqueCurrent().getValueAsDouble() > 22.0)
-        // .andThen(this.runOnce(() -> {
-        // // System.out.println("Turret Current Limit Reached");
-        // turretMotor.stopMotor();
-        // double heading = 170 * (Math.PI / 180);
-        // // turretMotor.setPosition(((heading / (2 * Math.PI))) *
+        return this.run(() -> {
+            turretMotor.stopMotor();
+            turretMotor.set(0.05);
+            // System.out.println("Calibrating Turret");
+        }).until(() -> turretMotor.getTorqueCurrent().getValueAsDouble() > Constants.Turret.hardStopCurrent.in(Amps))
+                .andThen(this.runOnce(() -> {
+                    // System.out.println("Turret Current Limit Reached");
+                    turretMotor.stopMotor();
+                    double heading = Constants.Turret.counterclockwiseStop.in(Radians);
+                    turretMotor.setPosition(((heading / (2 * Math.PI))) *
+                            Constants.Turret.turretBeltRatio);
+                    // turretMotor.setPosition(0 * Constants.Turret.turretBeltRatio);
+                }));
+
+        // return this.runOnce(() -> {
+        // double heading = Constants.Turret.clockwiseStop.in(Radians);
+
+        // // Convert heading in radians into rotations, then get motor rotations
+        // turretMotor.setPosition(((heading / (2 * Math.PI))) *
         // Constants.Turret.turretBeltRatio);
-        // turretMotor.setPosition(0 * Constants.Turret.turretBeltRatio);
-        // }));
-
-        return this.runOnce(() -> {
-            double heading = Constants.Turret.clockwiseStop.in(Radians);
-
-            // Convert heading in radians into rotations, then get motor rotations
-            turretMotor.setPosition(((heading / (2 * Math.PI))) *
-                    Constants.Turret.turretBeltRatio);
-        });
+        // });
     }
 
     // Set the shooter to a target heading in radians relative to the robot (0rad is
@@ -311,7 +360,35 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void setShooterSpeed(double speed) {
-        mainShooterMotor.set(-speed);
-        hoodShooterMotor.set(-speed * Constants.Turret.shooterRatio);
+        speed /= 60.0; // convert from rpm to rps
+
+        VelocityVoltage mainRequest = new VelocityVoltage(-speed);
+        VelocityVoltage hoodRequest = new VelocityVoltage(-speed * Constants.Turret.radiusRatio * Constants.Turret.shooterRatio);
+
+        mainShooterMotor.setControl(mainRequest);
+        hoodShooterMotor.setControl(hoodRequest);
+    }
+
+    public Angle getTurretDiff() {
+        return headingDiff;
+    }
+
+    public void startAiming() {
+        aiming = true;
+    }
+    
+    public void stopAiming() {
+        aiming = false;
+    }
+
+    public void startShooter() {
+        shooting = true;
+    }
+    
+    public void stopShooter() {
+        shooting = false;
+
+        mainShooterMotor.stopMotor();
+        hoodShooterMotor.stopMotor();
     }
 }
