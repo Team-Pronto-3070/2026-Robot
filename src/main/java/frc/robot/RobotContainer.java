@@ -23,6 +23,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SpindexerSubsytem;
 import frc.robot.subsystems.TurretSubsystem;
+import frc.robot.subsystems.LEDSubsystem;
 
 public class RobotContainer {
         // kSpeedAt12Volts desired top speed
@@ -49,6 +50,8 @@ public class RobotContainer {
         public final CameraSubsystem frontLeftCamera = new CameraSubsystem(Constants.Vision.frontLeftParams);
         public final CameraSubsystem frontRightCamera = new CameraSubsystem(Constants.Vision.frontRightParams);
         public final CameraSubsystem rightCamera = new CameraSubsystem(Constants.Vision.rightParams);
+
+        public final LEDSubsystem ledSubsystem = new LEDSubsystem();
 
         public final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
         public final SpindexerSubsytem spindexerSubsytem = new SpindexerSubsytem();
@@ -140,6 +143,8 @@ public class RobotContainer {
                                                 }
 
                                         }
+
+                                        ledSubsystem.setLock(turretSubsystem.getTurretDiff().in(Degrees) < 1);
                                 })
                                                 .ignoringDisable(true));
 
@@ -161,8 +166,10 @@ public class RobotContainer {
                 oi.shoot.whileTrue(turretSubsystem.run(() -> {
                         if (Math.abs(turretSubsystem.getTurretDiff().in(Degrees)) < 1) {
                                 spindexerSubsytem.spin();
+                                ledSubsystem.setShooting(true);
                         } else {
                                 spindexerSubsytem.stop();
+                                ledSubsystem.setShooting(false);
                         }
 
                         turretSubsystem.startShooter();
@@ -170,6 +177,7 @@ public class RobotContainer {
                 oi.shoot.onFalse(turretSubsystem.runOnce(() -> {
                         turretSubsystem.stopShooter();
                         spindexerSubsytem.stop();
+                        ledSubsystem.setShooting(false);
                 }));
 
                 oi.turret.onTrue(turretSubsystem.runOnce(() -> turretSubsystem.startAiming()));
